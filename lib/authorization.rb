@@ -7,8 +7,8 @@ class Authorization < ActiveRecord::Base
   belongs_to :subject, :polymorphic => true
   
   validates_presence_of :role
-  validates_presence_of :subject_type, :on => :create, :if => Proc.new { |a| not (a.trustee_id == 1 && a.trustee_type == 'User') }
-  validates_presence_of :subject_id, :on => :create, :if => Proc.new { |a| not (a.trustee_id == 1 && a.trustee_type == 'User') }
+#  validates_presence_of :subject_type, :on => :create, :if => Proc.new { |a| not (a.trustee_id == 1 && a.trustee_type == 'User') }
+#  validates_presence_of :subject_id, :on => :create, :if => Proc.new { |a| not (a.trustee_id == 1 && a.trustee_type == 'User') }
   validates_presence_of :trustee_type
   validates_presence_of :trustee_id
 
