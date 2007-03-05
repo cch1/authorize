@@ -139,7 +139,7 @@ module Authorize
     end
         
     module ModelExtensions
-      ConditionClause = "EXISTS (SELECT a.* FROM authorizations a WHERE a.trustee_id IN (%s) AND (a.subject_type IS NULL OR (a.subject_type = '%s' AND (a.subject_id = %s.%s OR a.subject_id IS NULL))))"
+      ConditionClause = "EXISTS (SELECT a.* FROM authorizations a WHERE a.trustee_id IN (%s) AND (a.subject_type IS NULL OR (a.subject_type = '%s' AND (a.subject_id = %s.%s OR a.subject_id IS NULL)))%s)"
 
       def self.included(recipient)
         recipient.extend(ClassMethods)
@@ -175,19 +175,25 @@ module Authorize
           Authorization.find(:all, :conditions => conditions)
         end
 
-        def authorized_conditions(trustees = User.current.identities)
+        def authorized_conditions(trustees = User.current.identities, roles = nil)
           tlist = trustees.map {|t| '\'' + t.to_s + '\''}.join(',')
-          {:conditions => ConditionClause% [tlist, self, self.table_name, self.primary_key]}
+          if roles
+            rlist = roles.map {|t| '\'' + t.to_s + '\''}.join(',')
+            rclause = " AND a.role IN (%s)"% [rlist]
+          end
+          {:conditions => ConditionClause% [tlist, self, self.table_name, self.primary_key, rclause]}
         end
       
-        def authorized_count(*args)
-          with_scope(:find => authorized_conditions) do
+        def authorized_count(roles, *args)
+          trustees = User.current.identities
+          with_scope(:find => authorized_conditions(trustees, roles)) do
             count(*args)
           end
         end
           
-        def authorized_find(*args)
-          with_scope(:find => authorized_conditions) do
+        def authorized_find(roles, *args)
+          trustees = User.current.identities
+          with_scope(:find => authorized_conditions(trustees, roles)) do
             find(*args)
           end
         end
