@@ -175,7 +175,7 @@ module Authorize
           Authorization.find(:all, :conditions => conditions)
         end
 
-        def authorized_conditions(trustees = User.current.identities, roles = nil)
+        def authorized_conditions(roles = nil, trustees = User.current.identities)
           tlist = trustees.map {|t| '\'' + t.to_s + '\''}.join(',')
           if roles
             rlist = roles.map {|t| '\'' + t.to_s + '\''}.join(',')
@@ -184,17 +184,29 @@ module Authorize
           {:conditions => ConditionClause% [tlist, self, self.table_name, self.primary_key, rclause]}
         end
       
-        def authorized_count(roles, *args)
-          trustees = User.current.identities
-          with_scope(:find => authorized_conditions(trustees, roles)) do
-            count(*args)
+        def authorized_count(*args)
+          options = {}
+          column_name = :all
+          if args.size > 0
+            if args[0].is_a?(Hash)
+              options = args[0] 
+            else
+              column_name, options = args
+            end
+          end
+          trustees = options.delete(:trustees) || User.current.identities
+          roles = options.delete(:roles)
+          with_scope(:find => authorized_conditions(roles, trustees)) do
+            count(column_name, options)
           end
         end
           
-        def authorized_find(roles, *args)
-          trustees = User.current.identities
-          with_scope(:find => authorized_conditions(trustees, roles)) do
-            find(*args)
+        def authorized_find(*args)
+          options = args.last.is_a?(Hash) ? args.pop : {}
+          trustees = options.delete(:trustees) || User.current.identities
+          roles = options.delete(:roles)
+          with_scope(:find => authorized_conditions(roles, trustees)) do
+            find(args.first, options)
           end
         end
         
