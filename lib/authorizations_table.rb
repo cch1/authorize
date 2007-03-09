@@ -100,17 +100,19 @@ module Authorize
           get_auth_for_trustee(role, subject) ? true : false
         end
         
-        def authorize(role, subject = nil)
+        def authorize(role, subject = nil, parent = nil)
           auth = get_auth_for_trustee(role, subject)
           if auth.nil?
+            logger.debug "#{User.current} authorizes #{self} as #{role} over #{subject} (derived from #{parent})"
             if subject.is_a? Class
-              auth = self.authorizations.create(:role => role, :subject_type => subject.to_s)
+              auth = self.authorizations.create(:role => role, :subject_type => subject.to_s, :parent => parent)
             elsif subject
-              auth = self.authorizations.create(:role => role, :subject => subject)
+              auth = self.authorizations.create(:role => role, :subject => subject, :parent => parent)
             else
-              auth = self.authorizations.create(:role => role)
+              auth = self.authorizations.create(:role => role, :parent => parent)
             end
           end
+          auth
         end
         
         def unauthorize(role, subject = nil)
@@ -161,8 +163,8 @@ module Authorize
           get_auth_for_subject(role, trustee) ? true : false
         end
         
-        def subject(role, trustee)
-          trustee.authorize role, self
+        def subject(role, trustee, parent = nil)
+          trustee.authorize role, self, parent
         end
         
         def unsubject(role, trustee)
@@ -221,8 +223,8 @@ module Authorize
           get_auth_for_subject(role, trustee) ? true : false
         end
         
-        def subject(role, trustee)
-          trustee.authorize role, self
+        def subject(role, trustee, parent = nil)
+          trustee.authorize role, self, parent
         end
       
         def unsubject(role, trustee)
