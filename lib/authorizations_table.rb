@@ -187,15 +187,16 @@ module Authorize
         end
       
         def authorized_count(*args)
-          options = {}
           column_name = :all
           if args.size > 0
             if args[0].is_a?(Hash)
-              options = args[0] 
+              options = args[0]
             else
               column_name, options = args
             end
+            options = options.dup
           end
+          options ||= {}
           trustees = options.delete(:trustees) || User.current.identities
           roles = options.delete(:roles)
           with_scope(:find => authorized_conditions(roles, trustees)) do
@@ -204,7 +205,7 @@ module Authorize
         end
           
         def authorized_find(*args)
-          options = args.last.is_a?(Hash) ? args.pop : {}
+          options = args.last.is_a?(Hash) ? args.pop.dup : {}
           trustees = options.delete(:trustees) || User.current.identities
           roles = options.delete(:roles)
           with_scope(:find => authorized_conditions(roles, trustees)) do
