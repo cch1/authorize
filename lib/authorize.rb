@@ -39,23 +39,23 @@ module Authorize
       
       # Permit? turns off redirection by default and takes no blocks
       def permit?( authorization_expression, *args )
-        @options = { :allow_guests => false, :redirect => false }
+        @options = { :allow_guests => false, :callback => false }
         @options.merge!( args.last.is_a?( Hash ) ? args.last : {} )
         
         has_permission?( authorization_expression )
       end
 
       # Allow method-level authorization checks.
-      # permit (without a question mark ending) calls redirect on denial by default.
-      # Specify :redirect => false to turn off redirection.
-      def permit( authorization_expression, *args )
-        @options = { :allow_guests => false, :redirect => true }
+      # permit (without a trailing question mark) invokes the callback "handle_authorization_failure" by default.
+      # Specify :callback => false to turn off callbacks.
+      def permit(authorization_expression, *args)
+        @options = { :allow_guests => false, :callback => true }
         @options.merge!( args.last.is_a?( Hash ) ? args.last : {} )
         
-        if has_permission?( authorization_expression )
+        if has_permission?(authorization_expression)
           yield if block_given?
-        elsif @options[:redirect]
-          handle_auth_failure
+        else 
+          handle_authorization_failure if @options[:callback]
         end
       end
             
@@ -77,17 +77,10 @@ module Authorize
         parse_authorization_expression( authorization_expression )
       end
       
-      # Handle authorization failure within permit.
-      def handle_auth_failure
-        message = 'Denied. You are not authorized for the requested operation.'
-        respond_to do |format|
-          format.html do 
-            request.env["HTTP_REFERER"] ? (flash[:warning] = message;redirect_to :back) : (render :text => message, :status => :forbidden )
-          end
-          format.js { render :update do |p| p.alert(message) end }
-          format.xml { render :xml => Builder::XmlMarkup.new.errors {|e| e.error message}, :status => :forbidden }
-        end
-        false  # Short-circuit the filters
+      # Handle authorization failure within permit.  Override this callback in your ApplicationController
+      # for custom behavior.  This method typically returns the value for the around_filter
+      def handle_authorization_failure
+        raise Authorize::AuthorizationError, 'You are not authorized for the requested operation.'
       end
 
       # Try to find current user by checking options hash and instance method in that order.
