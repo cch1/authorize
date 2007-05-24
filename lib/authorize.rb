@@ -10,7 +10,9 @@ module Authorize
     end    
 
     def self.included( recipient )
-      recipient.rescue_responses['Authorize::AuthorizationError'] = :forbidden
+      if recipient.respond_to?(:rescue_responses)
+        recipient.rescue_responses['Authorize::AuthorizationError'] = :forbidden
+      end
       recipient.extend( ControllerClassMethods )
       recipient.class_eval do
         include ControllerInstanceMethods
