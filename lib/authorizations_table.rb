@@ -141,7 +141,9 @@ module Authorize
     end
         
     module ModelExtensions
-      ConditionClause = "EXISTS (SELECT a.* FROM authorizations a WHERE a.trustee_id IN (%s) AND (a.subject_type IS NULL OR (a.subject_type = '%s' AND (a.subject_id = %s.%s OR a.subject_id IS NULL)))%s)"
+#      ConditionClause = "EXISTS (SELECT a.* FROM authorizations a WHERE a.trustee_id IN (%s) AND (a.subject_type IS NULL OR (a.subject_type = '%s' AND (a.subject_id = %s.%s OR a.subject_id IS NULL)))%s)"
+      # The above statement does not optimize well on MySQL 5.0, probably due to the presence of NULLs and ORs.  Forcing the use of an appropriate index solves the problem. 
+      ConditionClause = "EXISTS (SELECT a.* FROM authorizations a USE INDEX (authorizations_3) WHERE a.trustee_id IN (%s) AND (a.subject_type IS NULL OR (a.subject_type = '%s' AND (a.subject_id = %s.%s OR a.subject_id IS NULL)))%s)"
 
       def self.included(recipient)
         recipient.extend(ClassMethods)
