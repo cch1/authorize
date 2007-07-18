@@ -35,7 +35,7 @@ class Authorization < ActiveRecord::Base
     end
   end
   
-  def self.authorized_conditions(trustees = [User.current.id], roles = %w(owner, proxy))
+  def self.authorized_conditions(trustees = [User.current.id], roles = %w(owner proxy))
     rlist = roles.map{|r| "'#{r}'"}.join(',')
     tlist = trustees.map{|t| "'#{t}'"}.join(',')
     {:conditions => ConditionClause% [tlist, rlist, tlist]}
@@ -51,6 +51,16 @@ class Authorization < ActiveRecord::Base
     with_scope(:find => self.authorized_conditions) do
       self.find(*args)
     end
+  end
+  
+  def subj
+    return '!Everything!' unless subject_type
+    return subject_type.constantize unless subject_id
+    return subject || '!Broken Link!'
+  end
+  
+  def broken_link?
+    subject.nil? && !subject_id.nil?
   end
   
   def to_s
