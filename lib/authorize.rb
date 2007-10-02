@@ -69,10 +69,10 @@ module Authorize
           if @current_user.nil?  # We aren't logged in, or an exception has already been raised
             return false
           elsif not @current_user.respond_to? :id
-            raise( UserDoesntImplementID, "User doesn't implement #id")
+            raise( TrusteeDoesntImplementID, "User doesn't implement #id")
             return false
           elsif not @current_user.respond_to? :authorized?
-            raise( UserDoesntImplementRoles, "User doesn't implement #authorized?" )
+            raise( TrusteeDoesntImplementRoles, "User doesn't implement #authorized?" )
             return false
           end
         end
