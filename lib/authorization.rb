@@ -9,12 +9,11 @@ class Authorization < ActiveRecord::Base
   acts_as_tree
   
   validates_presence_of :role
-#  validates_presence_of :subject_type, :on => :create, :if => Proc.new { |a| not (a.trustee_id == 1 && a.trustee_type == 'User') }
-#  validates_presence_of :subject_id, :on => :create, :if => Proc.new { |a| not (a.trustee_id == 1 && a.trustee_type == 'User') }
   validates_presence_of :trustee_type
   validates_presence_of :trustee_id
 
   ConditionClause = "trustee_id IN (%s) OR EXISTS (SELECT id FROM authorizations a WHERE a.subject_id = authorizations.subject_id AND a.subject_type = authorizations.subject_type AND a.role IN (%s) AND a.trustee_id IN (%s))"
+  OwnershipRoles = %w(owner proxy)
 
   def self.generic_authorizations(trustee)
     self.find(:all, :conditions => {:subject_type => nil, :subject_id => nil, :trustee_id => trustee})
@@ -35,21 +34,36 @@ class Authorization < ActiveRecord::Base
     end
   end
   
-  def self.authorized_conditions(trustees = [User.current.id], roles = %w(owner proxy))
-    rlist = roles.map{|r| "'#{r}'"}.join(',')
+  def self.authorized_conditions(roles = nil, trustees = User.current.identities)
+    rlist = (roles || OwnershipRoles).map{|r| "'#{r}'"}.join(',')
     tlist = trustees.map{|t| "'#{t}'"}.join(',')
     {:conditions => ConditionClause% [tlist, rlist, tlist]}
   end
   
   def self.authorized_count(*args)
-    with_scope(:find => self.authorized_conditions) do
-      self.count(*args)
+    column_name = :all
+    if args.size > 0
+      if args[0].is_a?(Hash)
+        options = args[0]
+      else
+        column_name, options = args
+      end
+      options = options.dup
+    end
+    options ||= {}
+    trustees = options.delete(:trustees) || User.current.identities
+    roles = options.delete(:roles)
+    with_scope(:find => authorized_conditions(roles, trustees)) do
+      count(column_name, options)
     end
   end
     
   def self.authorized_find(*args)
-    with_scope(:find => self.authorized_conditions) do
-      self.find(*args)
+    options = args.last.is_a?(Hash) ? args.pop.dup : {}
+    trustees = options.delete(:trustees) || User.current.identities
+    roles = options.delete(:roles)
+    with_scope(:find => authorized_conditions(roles, trustees)) do
+      find(args.first, options)
     end
   end
   
