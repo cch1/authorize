@@ -90,6 +90,7 @@ module Authorize
       module ClassMethods
         def acts_as_trustee
           has_many :authorizations, :as => :trustee, :dependent => :delete_all
+          has_many :permissions, :as => :trustee, :class_name => 'Authorization', :dependent => :delete_all
           include Authorize::AuthorizationsTable::TrusteeExtensions::InstanceMethods
           include Authorize::Identity::TrusteeExtensions::InstanceMethods   # Provides all kinds of dynamic sugar via method_missing
         end
