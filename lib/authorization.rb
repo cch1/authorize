@@ -64,6 +64,6 @@ class Authorization < ActiveRecord::Base
   end
   
   def to_s
-    "#{trustee} as #{role} over #{subject || '!Everything!'}"
+    "#{trustee} as #{role} over #{subj || '!Everything!'}"
   end
 end
