@@ -1,5 +1,3 @@
-require File.dirname(__FILE__) + '/exceptions'
-
 # Provides the appearance of dynamically generated methods on the roles database.
 #
 # Examples:

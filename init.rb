@@ -1,7 +1,7 @@
 require 'parser'
 require 'authorize'
 require 'authorizations_table'
-require 'exceptions'
+require 'GroupSmarts/authorize/exceptions'
 
 ActionController::Base.send(:include, Authorize::Base)
 ActionView::Base.send(:include, Authorize::Base::ControllerInstanceMethods)
