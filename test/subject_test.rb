@@ -27,4 +27,10 @@ class SubjectTest < ActiveSupport::TestCase
     widgets(:foo).unsubject('owner', users(:chris))
     assert !widgets(:foo).subjected?('owner', users(:chris))
   end
+
+  test 'should be findable when authorized' do
+    assert_equal 1, Widget.authorized_find(:all, :trustees => [users(:pascale).id]).size
+    assert_equal 2, Widget.authorized_find(:all, :trustees => [users(:chris).id]).size
+    assert_equal 1, Widget.authorized_find(:all, :trustees => [users(:chris).id], :roles => ['owner']).size
+  end
 end

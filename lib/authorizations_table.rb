@@ -64,7 +64,7 @@ module Authorize
     end
         
     module ModelExtensions
-      ConditionClause = "EXISTS (SELECT 1 FROM authorizations a WHERE (a.subject_type IS NULL OR (a.subject_type = '%s' AND (a.subject_id = %s.%s OR a.subject_id IS NULL))) AND a.trustee_id IN (%s) %s)"
+      ConditionClause = "EXISTS (SELECT 1 FROM authorizations a WHERE (a.subject_type IS NULL OR (a.subject_type = ? AND (a.subject_id = ?.? OR a.subject_id IS NULL))) AND a.trustee_id IN (?))"
       # The above statement does not optimize well on MySQL 5.0, probably due to the presence of NULLs and ORs.  Forcing the use of an appropriate index solves the problem. 
       # Another (temporary) solution was to delete the other indices that caused MySQL to poorly optimize queries with this condition.  When other indices are required, consider the following query: 
 #      ConditionClause = "EXISTS (SELECT true FROM authorizations a USE INDEX (subject_trustee_role) WHERE (a.subject_type IS NULL OR (a.subject_type = '%s' AND (a.subject_id = %s.%s OR a.subject_id IS NULL))) AND a.trustee_id IN (%s) %s)"
@@ -104,12 +104,12 @@ module Authorize
         end
 
         def authorized_conditions(roles = nil, trustees = User.current.identities)
-          tlist = trustees.map {|t| '\'' + t.to_s + '\''}.join(',')
+          conditions = [ConditionClause, self.to_s, self.table_name, self.primary_key, trustees]
           if roles
-            rlist = roles.map {|t| '\'' + t.to_s + '\''}.join(',')
-            rclause = " AND a.role IN (%s)"% [rlist]
+            conditions[0][-1] = " AND a.role IN (?))"
+            conditions << roles
           end
-          {:conditions => ConditionClause% [self, self.table_name, self.primary_key, tlist, rclause]}
+          {:conditions => conditions}
         end
       
         def authorized_count(*args)
