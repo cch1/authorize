@@ -1,0 +1,19 @@
+chris_foo:
+  role: owner
+  trustee_id: <%= Fixtures.identify(:chris) %>
+  trustee_type: User
+  subject: foo (Widget)
+  created_at: <%= 2.days.ago.to_s :db %>
+  updated_at: <%= 1.days.ago.to_s :db %>
+pascale_bar:
+  role: proxy
+  trustee: pah1 (User)
+  subject: bar (Widget)
+  created_at: <%= 2.days.ago.to_s :db %>
+  updated_at: <%= 1.days.ago.to_s :db %>
+chris_1:
+  role: overlord
+  trustee_id: <%= Fixtures.identify(:chris) %>
+  trustee_type: User
+  created_at: <%= 1.days.ago.to_s :db %>
+  updated_at: <%= 1.days.ago.to_s :db %>  

@@ -6,8 +6,6 @@ class Authorization < ActiveRecord::Base
   belongs_to :trustee, :polymorphic => true
   belongs_to :subject, :polymorphic => true
   
-  acts_as_tree
-  
   validates_presence_of :role
   validates_presence_of :trustee_type
   validates_presence_of :trustee_id
