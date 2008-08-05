@@ -1,0 +1,8 @@
+Description:
+    Generates a migration for the authorizations table suitable for use with the Authorize plugin.
+
+Example:
+    ./script/generate authorize authorizations
+
+    This will create:
+        db/migrate/<timestamp>_create_authorizations.rb

@@ -1,4 +1,60 @@
 Authorize
 =========
-
-Description goes here
+As a result of including the authorizations option of ActsAsAuthorized, the following methods are available:
+ 
+ActiveRecord-provided associations (see AR documentation for complete list of related methods)
+  Trustee (User or Group, for example)
+    authorizations
+          Returns array of authorizations belonging to trustee
+          Deprecated equivalent: roles
+    subjected_<subjected_models>   # Note the use of the plural model name
+          Returns authorized model objects
+          Not yet implemented
+  Subject (Widget, for example)
+    subjections  # Synonym for authorizations -must be distinct to permit model as both trustee and subject.
+          Returns array of authorizations over acts_as_subject objects.
+          Deprecated equivalent: accepted_roles
+    authorized_<trustee_models>
+          Returns array of trustees with an authorization over the acts_as_subject object.
+          Not yet implemented
+  Authorization
+    trustee
+          Returns the authorized trustee
+    subject
+          Returns the object of the authorization
+    subjected_<subjected_model>     # Note the use of the singular model name
+          Returns subjected model object of named class.  NB: This association is only safe with UUID-keyed models!
+          Disabled
+    authorized_<authorized_model>      # Note the use of the singular model name
+          Returns authorized trustee object of named class.  NB: This association is only safe with UUID-keyed trustees!
+          Disabled
+Standard ActsAsAuthorized methods:
+  Trustee
+    authorize <Role>, <Subject Instance or Class>
+          Creates an authorization for the trustee as <Role> over the subject Instance or Class.
+    unauthorize <Role>, <Subject Instance or Class>
+          Removes any authorization for the trustee as <Role> over the subject Instance or Class.
+    authorized? <Role>, <Subject Instance or Class>
+          Boolean condition for the trustee being authorized as the <Role> over the subject Instance or Class.
+  Subject (Authorizable Class or Instance)
+    subject <Role>, <Trustee>
+          Subjects the model instance or class to the authority of trustee as the named role.
+    unsubject <Role>, <Trustee>
+          Removes any authorization for the trustee as the named role over the model instance or class
+    subjected? <Role>, <Trustee>
+          Boolean condition for the the model Instance or Class being subjected to the authority of trustee as the named role.
+Identity Mixin methods:
+  Trustee
+    is_<Role>_for_what
+          Returns array of subjects for which trustee as <Role> is authorized
+    is_<Role>_<Preposition>?(<Authorizable object>)
+          Boolean condition for trustee as <Role> being authorized for the specified subject.
+    is_<Role>[_<Preposition> <Authorizable object>]
+          Creates authorization for trustee as <Role> either generically or over the specified subject (model or class)
+    is_<Role>
+          Creates generic authorization to trustee as <Role>
+  Subject
+    has_<Role>
+          Returns array of trustees having specified role over the subject.
+    has_<Role>?
+          Boolean conditioned upon at least one trustee having <Role> over the subject.
