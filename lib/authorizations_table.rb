@@ -106,7 +106,7 @@ module Authorize
         def authorized_conditions(roles = nil, trustees = User.current.identities)
           conditions = [ConditionClause, self.to_s, self.table_name, self.primary_key, trustees]
           if roles
-            conditions[0][-1] = " AND a.role IN (?))"
+            conditions[0] = ConditionClause.dup.insert(-2, " AND a.role IN (?)")
             conditions << roles
           end
           {:conditions => conditions}
