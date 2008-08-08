@@ -6,3 +6,7 @@ bar:
   name: deluxe
   created_at: <%= 2.days.ago.to_s :db %>
   updated_at: <%= 1.days.ago.to_s :db %>
+baz:
+  name: baz
+  created_at: <%= 2.days.ago.to_s :db %>
+  updated_at: <%= 1.days.ago.to_s :db %>
