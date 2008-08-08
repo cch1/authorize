@@ -20,10 +20,6 @@ module Authorize #:nodoc:
   class CannotObtainModelObject < AuthorizationError
   end
   
-  # Raised when the obtained trustee object doesn't implement #id
-  class UserDoesntImplementIdentities < AuthorizationError
-  end
-  
   # Raised when the obtained trustee object doesn't implement #has_role?
   class TrusteeDoesntImplementRoles < AuthorizationError
   end

@@ -39,8 +39,11 @@ module Authorize
         expr = replace_role_of_model( expr )
         begin
           instance_eval( expr )
-        rescue
-          raise AuthorizationExpressionInvalid, "Cannot parse authorization (#{str})"
+        rescue CannotObtainModelObject, CannotObtainUserObject => e
+          raise e
+          false
+        rescue => e
+          raise AuthorizationExpressionInvalid, "Cannot parse authorization expression (#{str}):#{e.to_s}"
           false
         end
       end
@@ -75,17 +78,15 @@ module Authorize
       
       def process_role_of_model(role, model_name)
         model = get_model(model_name)
-        @identities ||= @current_user.identities
-        logger.debug("***Checking for authorization of #{@identities.join(', ')} as #{role} over #{model.to_s}")
+        logger.debug("***Checking for authorization of #{authorized_identities.join(', ')} as #{role} over #{model.to_s}")
         @authorized_roles ||= {}
-        @authorized_roles[model] ||= Authorization.find_effective(model, @identities).map(&:role)
+        @authorized_roles[model] ||= Authorization.find_effective(model, authorized_identities).map(&:role)
         @authorized_roles[model].include?(role)
       end
       
       def process_role(role)
-        @identities ||= @current_user.identities
-        logger.debug("***Checking for authorization of #{@identities.join(', ')} as global #{role}")
-        generic_roles = Authorization.generic_authorizations(@identities).map(&:role)
+        logger.debug("***Checking for authorization of #{authorized_identities.join(', ')} as global #{role}")
+        generic_roles = Authorization.generic_authorizations(authorized_identities).map(&:role)
         generic_roles.include?(role)
       end
     end

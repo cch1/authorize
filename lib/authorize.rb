@@ -55,19 +55,12 @@ module Authorize
       private
       
       def has_permission?(authorization_expression)
-        @current_user = get_user
-        if not @options[:allow_guests]
-          if @current_user.nil?  # We aren't logged in, or an exception has already been raised
-            return false
-          elsif not @current_user.respond_to? :identities
-            raise UserDoesntImplementIdentities, "User doesn't implement #identities"
-            return false
-          elsif not @current_user.respond_to? :authorized?
-            raise TrusteeDoesntImplementRoles, "User doesn't implement #authorized?"
-            return false
-          end
-        end
         parse_authorization_expression(authorization_expression)
+      end
+      
+      def authorized_identities
+        u = get_user
+        u.respond_to?(:identities) ? u.identities : [u]
       end
       
       # Handle authorization failure within permit.  Override this callback in your ApplicationController
@@ -78,14 +71,8 @@ module Authorize
 
       # Try to find current user by checking options hash and instance method in that order.
       def get_user
-        if @options[:user]
-          @options[:user]
-        elsif @options[:get_user_method]
-          send( @options[:get_user_method] )
-        elsif methods.include? "current_user"
-          current_user
-        elsif not @options[:allow_guests]
-          raise CannotObtainUserObject, "Couldn't find #current_user or @user, and nothing appropriate found in hash"
+        returning @options[:user] || (methods.include?('current_user') && current_user) || (Object.const_defined?('User') && User.current) do |u|
+          raise CannotObtainUserObject unless u || @options[:allow_guests]
         end
       end
       
