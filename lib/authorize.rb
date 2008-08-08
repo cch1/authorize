@@ -30,36 +30,31 @@ module Authorize
     module ControllerInstanceMethods
       include Authorize::Base::EvalParser  # RecursiveDescentParser is another option
       
-      # Permit? turns off redirection by default and takes no blocks
-      def permit?(authorization_expression, *args)
-        @options = { :allow_guests => false, :callback => false }
-        @options.merge!(args.last.is_a?(Hash) ? args.last : {})
-        
-        has_permission?(authorization_expression)
+      # Simple predicate for authorization.  Options are:
+      #   allow_guests  should the authorization expression be evaluated even when no trustees are obvious?
+      def permit?(authorization_expression, options = {})
+        options.reverse_merge!({:allow_guests => false})
+        @options = options
+        parse_authorization_expression(authorization_expression)
       end
 
       # Allow method-level authorization checks.
       # permit (without a trailing question mark) invokes the callback "handle_authorization_failure" by default.
       # Specify :callback => false to turn off callbacks.
-      def permit(authorization_expression, *args)
-        @options = { :allow_guests => false, :callback => true }
-        @options.merge!(args.last.is_a?(Hash) ? args.last : {})
-        
-        if has_permission?(authorization_expression)
+      def permit(authorization_expression, options = {})
+        options.reverse_merge!(:callback => true)
+        callback = options.delete(:callback)
+        if permit?(authorization_expression, options)
           yield if block_given?
         else 
-          handle_authorization_failure if @options[:callback]
+          handle_authorization_failure if callback
         end
       end
             
       private
-      
-      def has_permission?(authorization_expression)
-        parse_authorization_expression(authorization_expression)
-      end
-      
       def authorized_identities
-        u = get_user
+        u = @options[:user] || get_user
+        raise CannotObtainUserObject unless u || @options[:allow_guests]
         u.respond_to?(:identities) ? u.identities : [u]
       end
       
@@ -69,11 +64,9 @@ module Authorize
         raise Authorize::AuthorizationError, 'You are not authorized for the requested operation.'
       end
 
-      # Try to find current user by checking options hash and instance method in that order.
+      # Try to find the relevant user through several classic hacks.
       def get_user
-        returning @options[:user] || (methods.include?('current_user') && current_user) || (Object.const_defined?('User') && User.current) do |u|
-          raise CannotObtainUserObject unless u || @options[:allow_guests]
-        end
+        (methods.include?('current_user') && current_user) || (Object.const_defined?('User') && User.current)
       end
       
       # Try to find a model to query for permissions
