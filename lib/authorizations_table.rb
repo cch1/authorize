@@ -25,7 +25,7 @@ module Authorize
         def authorize(role, subject = nil, parent = nil)
           auth = get_auth_for_trustee(role, subject)
           if auth.nil?
-            logger.debug "#{User.current} authorizes #{self} as #{role} over #{subject} (derived from #{parent})"
+            logger.debug "#{self} authorized as #{role} over #{subject} (derived from #{parent})"
             attrs = {:role => role}
             if subject.is_a? Class
               attrs.merge!(:subject_type => subject.to_s)
@@ -99,19 +99,21 @@ module Authorize
         
         def subjections(trustee = nil)
           conditions = {:subject_type => self.to_s, :subject_id => nil}
-          conditions[:trustee_id] = trustee if trustee
+          conditions[:trustee_id] = trustee if trustee # Isn't trustee mandatory?
           Authorization.find(:all, :conditions => conditions)
         end
-
-        def authorized_conditions(roles = nil, trustees = User.current.identities)
-          conditions = [ConditionClause, self.to_s, self.table_name, self.primary_key, trustees]
-          if roles
-            conditions[0] = ConditionClause.dup.insert(-2, " AND a.role IN (?)")
-            conditions << roles
-          end
-          {:conditions => conditions}
+        
+        # This method encapsulates an ugly-but-useful coupling between models and the User.current class method.
+        # Override it to specify which trustees should be used by default to perform an authorized_{find, count}.
+        def default_identities 
+          raise CannotObtainUserObject unless User && User.current 
+          User.current.respond_to?(:identities) ? User.current.identities : [User.current]
         end
-      
+
+        # Count the number of persisted model instances for which the trustee(s) are authorized.  The interface
+        # to AR::Base.count is extended with the following options:
+        #   * trustees  an array of trustees whose authorizations are to be searched (default comes from default_identities class method)
+        #   * roles     an array of roles to be searched
         def authorized_count(*args)
           column_name = :all
           if args.size > 0
@@ -123,18 +125,20 @@ module Authorize
             options = options.dup
           end
           options ||= {}
-          trustees = options.delete(:trustees) || User.current.identities
-          roles = options.delete(:roles)
-          with_scope(:find => authorized_conditions(roles, trustees)) do
+          trustees = options.delete(:trustees) || default_identities
+          with_scope(:find => authorized_conditions(trustees, options.delete(:roles))) do
             count(column_name, options)
           end
         end
           
+        # Find persisted model instances for which the trustee(s) are authorized.  The interface to AR::Base.find
+        # is extended with the following options:
+        #   * trustees  an array of trustees whose authorizations are to be searched (default comes from default_identities class method)
+        #   * roles     an array of roles to be searched
         def authorized_find(*args)
           options = args.last.is_a?(Hash) ? args.pop.dup : {}
-          trustees = options.delete(:trustees) || User.current.identities
-          roles = options.delete(:roles)
-          with_scope(:find => authorized_conditions(roles, trustees)) do
+          trustees = options.delete(:trustees) || default_identities
+          with_scope(:find => authorized_conditions(trustees, options.delete(:roles))) do
             find(args.first, options)
           end
         end
@@ -142,6 +146,18 @@ module Authorize
         private          
         def get_auth_for_subject(role, trustee)
           trustee.authorizations.find(:first, :conditions => {:role => role, :subject_type => self.to_s, :subject_id => nil})
+        end
+
+        # Build a SQL WHERE clause element that restricts model queries to return only authorized instances.  Eligible
+        # authorizations can be restricted by role (default: all roles) and by trustee (default: default_identities). 
+        # TODO: Optimize query to use '=' instead of the IN () construct when only a single role or trustee is provided.
+        def authorized_conditions(trustees = default_identities, roles = nil)
+          conditions = [ConditionClause, self.to_s, self.table_name, self.primary_key, trustees]
+          if roles
+            conditions[0] = ConditionClause.dup.insert(-2, " AND a.role IN (?)")
+            conditions << roles
+          end
+          {:conditions => conditions}
         end
       end     
 
