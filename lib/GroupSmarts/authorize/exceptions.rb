@@ -21,7 +21,7 @@ module Authorize #:nodoc:
   end
   
   # Raised when the obtained trustee object doesn't implement #id
-  class TrusteeDoesntImplementID < AuthorizationError
+  class UserDoesntImplementIdentities < AuthorizationError
   end
   
   # Raised when the obtained trustee object doesn't implement #has_role?

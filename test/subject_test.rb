@@ -47,4 +47,10 @@ class SubjectTest < ActiveSupport::TestCase
   test 'should be countable when authorized generically' do
     assert_equal 2, Widget.authorized_count(:all, :trustees => [users(:chris).id], :roles => ['overlord'])
   end
+
+  # The authorized_{find, count} methods automatically check User.current.identities when searching for authorized identities.
+  test 'should be findable as User.current when authorized' do
+    User.current = users(:chris)
+    assert_equal 2, Widget.authorized_find(:all).size
+  end
 end
