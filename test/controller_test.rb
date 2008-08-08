@@ -18,19 +18,39 @@ class ControllerTest < ActionController::TestCase
     end
   end
 
-  test 'should represent authorization with boolean' do
+  test 'should find subject in instance variable' do
     @controller.instance_variable_set(:@w, widgets(:foo))
-    assert @controller.permit?('owner of w', {:user => users(:chris)})
-    assert !@controller.permit?('proxy of w', {:user => users(:chris)})
+    assert_nothing_raised do
+      @controller.permit?('owner of w', {:user => users(:chris)})
+    end
+  end
+
+  test 'should find trustee from current_user method' do
+    @controller.instance_variable_set(:@current_user, users(:chris))
+    assert_nothing_raised do
+      @controller.permit?('owner of w', {:w => widgets(:foo)})
+    end
+  end
+
+  test 'should find trustee from User.current class attribute' do
+    @controller.instance_variable_set(:@current_user, nil)
+    User.current = users(:chris)
+    assert_nothing_raised do
+      @controller.permit?('owner of w', {:w => widgets(:foo)})
+    end
+  end
+
+  test 'should represent authorization with boolean' do
+    assert @controller.permit?('owner of w', {:user => users(:chris), :w => widgets(:foo)})
+    assert !@controller.permit?('proxy of w', {:user => users(:chris), :w => widgets(:foo)})
   end
 
   test 'should represent authorization with block processing or exception' do
-    @controller.instance_variable_set(:@w, widgets(:foo))
     assert_nothing_raised do
-      @controller.permit('owner of w', {:user => users(:chris)}) {}
+      @controller.permit('owner of w', {:user => users(:chris), :w => widgets(:foo)}) {}
     end
     assert_raises Authorize::AuthorizationError do
-      @controller.permit('proxy of w', {:user => users(:chris)}) {}
+      @controller.permit('proxy of w', {:user => users(:chris), :w => widgets(:foo)}) {}
     end
   end
   
@@ -40,15 +60,8 @@ class ControllerTest < ActionController::TestCase
     end
     du = DegenerateUser.create
     du.authorize('steward', widgets(:foo))
-    @controller.instance_variable_set(:@w, widgets(:foo))
     assert_nothing_raised do
-      @controller.permit('steward of w', {:user => du})
+      @controller.permit('steward of w', {:user => du, :w => widgets(:foo)})
     end
-  end
-  
-  test 'should find user from current_user attribute' do
-    @controller.instance_variable_set(:@w, widgets(:foo))
-    @controller.instance_variable_set(:@current_user, users(:chris))
-    assert @controller.permit?('owner of w')    
   end
 end
