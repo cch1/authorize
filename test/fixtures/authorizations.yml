@@ -17,4 +17,11 @@ chris_1:
   trustee_id: <%= Fixtures.identify(:chris) %>
   trustee_type: User
   created_at: <%= 1.days.ago.to_s :db %>
+  updated_at: <%= 1.days.ago.to_s :db %>
+alex_widget:
+  role: overlord
+  trustee_id: <%= Fixtures.identify(:alex) %>
+  trustee_type: User
+  subject_type: Widget
+  created_at: <%= 1.days.ago.to_s :db %>
   updated_at: <%= 1.days.ago.to_s :db %>  

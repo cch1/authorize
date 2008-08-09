@@ -10,32 +10,35 @@ class Authorization < ActiveRecord::Base
   validates_presence_of :trustee_type
   validates_presence_of :trustee_id
 
-  ConditionClause = "trustee_id IN (%s) OR EXISTS (SELECT id FROM authorizations a WHERE a.subject_id = authorizations.subject_id AND a.subject_type = authorizations.subject_type AND a.role IN (%s) AND a.trustee_id IN (%s))"
+  ConditionClause = "trustee_id IN (?) OR EXISTS (SELECT 1 FROM authorizations a WHERE (a.subject_type IS NULL OR (a.subject_type = authorizations.subject_type AND (a.subject_id IS NULL OR a.subject_id = authorizations.subject_id))) AND a.trustee_id IN (?) AND a.role IN (?))"
   OwnershipRoles = %w(owner proxy)
 
   def self.generic_authorizations(trustee)
     self.find(:all, :conditions => {:subject_type => nil, :subject_id => nil, :trustee_id => trustee})
   end
   
-  # Returns the effective authorizations over a subject.
+  # Returns the effective authorizations (generic/global, class and subject-specific authorizations) for a subject instance.
   # The trustee and role paramaters can be scalars or arrays.  The trustee elements 
   # can be AR objects or ids.
   def self.find_effective(subject, trustee = nil, role = nil)
-    subject_conditions = "subject_type IS NULL OR (subject_type = '%s' AND (subject_id = '%s' OR subject_id IS NULL))"% [subject.class.to_s, subject.id]
+    subject_conditions = ["subject_type IS NULL OR (subject_type = ? AND (subject_id = ? OR subject_id IS NULL))", subject.class.to_s, subject.id]
     self.with_scope(:find => {:conditions => subject_conditions}) do
       conditions = {}
       conditions[:trustee_id] = trustee if trustee
       conditions[:role] = role if role
-      options = {}
-      options[:conditions] = conditions if !conditions.empty?
-      self.find(:all, options)
+      self.find(:all, :conditions => conditions)
     end
   end
   
-  def self.authorized_conditions(roles = nil, trustees = User.current.identities)
-    rlist = (roles || OwnershipRoles).map{|r| "'#{r}'"}.join(',')
-    tlist = trustees.map{|t| "'#{t}'"}.join(',')
-    {:conditions => ConditionClause% [tlist, rlist, tlist]}
+  def self.authorized_conditions(trustees = default_identities, ownership_roles = nil)
+    {:conditions => [ConditionClause, trustees, trustees, ownership_roles]}
+  end
+  
+  # This method encapsulates an ugly-but-useful coupling between models and the User.current class method.
+  # Override it to specify which trustees should be used by default to perform an authorized_{find, count}.
+  def self.default_identities 
+    raise CannotObtainUserObject unless User && User.current 
+    User.current.respond_to?(:identities) ? User.current.identities : [User.current]
   end
   
   def self.authorized_count(*args)
@@ -49,18 +52,18 @@ class Authorization < ActiveRecord::Base
       options = options.dup
     end
     options ||= {}
-    trustees = options.delete(:trustees) || User.current.identities
-    roles = options.delete(:roles)
-    with_scope(:find => authorized_conditions(roles, trustees)) do
+    trustees = options.delete(:trustees) || default_identities
+    with_scope(:find => authorized_conditions(trustees, options.delete(:roles))) do
       count(column_name, options)
     end
   end
     
+  # Find the authorized authorizations.  An Authorization instance is considered authorized if the trustee is the trustee of the Authorization
+  # instance, or if the trustee is the owner of the subject of the Authorization instance (where 'ownership' is determined by the roles option).  
   def self.authorized_find(*args)
     options = args.last.is_a?(Hash) ? args.pop.dup : {}
-    trustees = options.delete(:trustees) || User.current.identities
-    roles = options.delete(:roles)
-    with_scope(:find => authorized_conditions(roles, trustees)) do
+    trustees = options.delete(:trustees) || default_identities
+    with_scope(:find => authorized_conditions(trustees, options.delete(:roles))) do
       find(args.first, options)
     end
   end
