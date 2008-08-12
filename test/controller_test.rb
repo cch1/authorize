@@ -64,4 +64,12 @@ class ControllerTest < ActionController::TestCase
       @controller.permit('steward of w', {:user => du, :w => widgets(:foo)})
     end
   end
+
+  test 'should parse simple expression' do
+    assert @controller.permit?('owner of User or owner or owner of w', {:user => users(:chris), :w => widgets(:foo)})
+  end
+
+  test 'should parse complex expression' do
+    assert @controller.permit?('owner of w and not (owner of User or owner)', {:user => users(:chris), :w => widgets(:foo)})
+  end
 end

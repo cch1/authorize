@@ -17,11 +17,19 @@ class Authorization < ActiveRecord::Base
     self.find(:all, :conditions => {:subject_type => nil, :subject_id => nil, :trustee_id => trustee})
   end
   
-  # Returns the effective authorizations (generic/global, class and subject-specific authorizations) for a subject instance.
-  # The trustee and role paramaters can be scalars or arrays.  The trustee elements 
-  # can be AR objects or ids.
-  def self.find_effective(subject, trustee = nil, role = nil)
-    subject_conditions = ["subject_type IS NULL OR (subject_type = ? AND (subject_id = ? OR subject_id IS NULL))", subject.class.to_s, subject.id]
+  # Returns the effective authorizations for a subject. The subject can be any one of the following
+  #   nil       generic/global authorizations are returned
+  #   Class     generic/global and class authorizations are returned
+  #   Instance  generic/global, class- subject-specific authorizations are returned.
+  # The trustee and role paramaters can be scalars or arrays.  The trustee elements can be AR objects or ids.
+  def self.find_effective(subject = nil, trustee = nil, role = nil)
+    if subject.is_a?(NilClass) then
+      subject_conditions = ["subject_type IS NULL"]
+    elsif subject.is_a?(Class) then
+      subject_conditions = ["subject_type IS NULL OR (subject_type = ? AND subject_id IS NULL)", subject.to_s]
+    else
+      subject_conditions = ["subject_type IS NULL OR (subject_type = ? AND (subject_id = ? OR subject_id IS NULL))", subject.class.to_s, subject]
+    end
     self.with_scope(:find => {:conditions => subject_conditions}) do
       conditions = {}
       conditions[:trustee_id] = trustee if trustee

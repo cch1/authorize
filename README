@@ -1,6 +1,19 @@
 Authorize
 =========
-As a result of including the authorizations option of ActsAsAuthorized, the following methods are available:
+The authorize plugin extends ActionController with the ability to check permissions and react accordingly.  There are two approaches:
+a simple boolean check (permit?) and a more sophisticated predicated block (permit) with exception handling.  In both cases, the method accepts
+a permissions description string expressed in a domain-specific language.  The simplest version of this language is just the name of the required 
+global/generic role.  For example, using the boolean version:
+
+	permit? "adminstrator"
+
+More complex expressions typically involve requiring a particular role over a particular model instance.  For example:
+
+	permit? "owner of :widget"  
+
+The authorize plugin extends ActiveRecord with two methods: acts_as_subject and acts_as_trustee.  A given model may invoke
+either or both, depending on requirements.  The follow narrative shows the methods added to models for management of 
+role-based authorization.
  
 ActiveRecord-provided associations (see AR documentation for complete list of related methods)
   Trustee (User or Group, for example)
@@ -28,14 +41,17 @@ ActiveRecord-provided associations (see AR documentation for complete list of re
     authorized_<authorized_model>      # Note the use of the singular model name
           Returns authorized trustee object of named class.  NB: This association is only safe with UUID-keyed trustees!
           Disabled
-Standard ActsAsAuthorized methods:
+Standard plugin methods:
   Trustee
     authorize <Role>, <Subject Instance or Class>
-          Creates an authorization for the trustee as <Role> over the subject Instance or Class.
+          Creates an authorization for the trustee as <Role> over the subject Instance or Class.  If neither an instance nor a class is specified,
+          the trustee is granted a generic/global authorization.
     unauthorize <Role>, <Subject Instance or Class>
-          Removes any authorization for the trustee as <Role> over the subject Instance or Class.
+          Removes any authorization for the trustee as <Role> over the subject Instance or Class.  Leave off the instance or class to remove a
+          generic authorization.
     authorized? <Role>, <Subject Instance or Class>
-          Boolean condition for the trustee being authorized as the <Role> over the subject Instance or Class.
+          Boolean condition for the trustee being authorized as the <Role> over the subject Instance or Class.  Leave off the instance or class to
+          check for a generic/global authorization.
   Subject (Authorizable Class or Instance)
     subject <Role>, <Trustee>
           Subjects the model instance or class to the authority of trustee as the named role.
