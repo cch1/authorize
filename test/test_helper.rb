@@ -1,52 +1,37 @@
-require 'test/unit'
+ENV['RAILS_ENV'] ||= 'test'
+require File.expand_path(File.dirname(__FILE__) + "/application/config/environment")
+require 'test_help'
 
-# Boot Rails manually, instead of via the environment.rb file.  This help limit the impact of the host application.
-# Plugins are booted as a consequence of booting Rails.
-ENV['RAILS_ENV'] = 'test'
-RAILS_GEM_VERSION = '2.1.0' unless defined? RAILS_GEM_VERSION
-require File.expand_path(File.join(File.dirname(__FILE__) + '/../../../../config/boot.rb'))
-Rails::Initializer.run
-
-# Remove the host application (../app/...) from the dependency and load paths.
-ActiveSupport::Dependencies.load_paths.delete_if {|path| /app\//.match(path) }
-ActiveSupport::Dependencies.load_once_paths.delete_if {|path| /app\//.match(path) }
-$LOAD_PATH.delete_if {|path| /app\//.match(path) }
-
-# Add our testing library directory to the load path.
-$LOAD_PATH.unshift(File.dirname(__FILE__) + '/lib')
-
-ActiveRecord::Base.logger = Logger.new(File.dirname(__FILE__) + "/debug.log")
-
-db_adapter = ENV['DB']
-# no db passed, try one of these fine config-free DBs before bombing. 
-db_adapter ||= 
-  begin
-    require 'rubygems'
-    require 'sqlite'
-    'sqlite'
-  rescue MissingSourceFile
-    begin 
-      require 'sqlite3'
-      'sqlite3'
-    rescue MissingSourceFile
-    end
-  end
-
-if db_adapter.nil?
-  raise "No DB Adapter selected. Pass the DB= option to pick one, or install Sqlite or Sqlite3." 
-end
-
-db_config = YAML::load(IO.read(File.dirname(__FILE__) + '/database.yml'))
-ActiveRecord::Base.establish_connection(db_config[db_adapter])
-
+# From this point forward, we can assume that we have booted a generic Rails environment plus
+# our (booted) plugin.
 load(File.dirname(__FILE__) + "/schema.rb")
 
-require 'action_controller/test_process'
+# Run the migrations (optional)
+# ActiveRecord::Migrator.migrate("#{Rails.root}/db/migrate")
 
-require 'active_record/fixtures'
-Test::Unit::TestCase.fixture_path = File.dirname(__FILE__) + "/fixtures"
-
+# Set Test::Unit options for optimal performance/fidelity.
 class Test::Unit::TestCase
   self.use_transactional_fixtures = true
   self.use_instantiated_fixtures  = false
+  self.fixture_path = "#{RAILS_ROOT}/../fixtures"
+  
+  def self.uses_mocha(description)
+    require 'mocha'
+    yield
+  rescue LoadError
+    $stderr.puts "Skipping #{description} tests. `gem install mocha` and try again."
+  end
+
+  def self.test(name, &block)  # Shamelessly lifted from ActiveSupport
+    test_name = "test_#{name.gsub(/\s+/,'_')}".to_sym
+    defined = instance_method(test_name) rescue false
+    raise "#{test_name} is already defined in #{self}" if defined
+    if block_given?
+      define_method(test_name, &block)
+    else
+      define_method(test_name) do
+        flunk "No implementation provided for #{name}"
+      end
+    end
+  end
 end

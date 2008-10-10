@@ -1,5 +1,4 @@
 require File.dirname(__FILE__) + '/test_helper.rb'
-require File.dirname(__FILE__) + '/lib/thingy_controller.rb'
 
 class ControllerClassTest < ActionController::TestCase
   fixtures :users, :widgets, :authorizations

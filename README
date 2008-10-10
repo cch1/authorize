@@ -1,5 +1,20 @@
 Authorize
 =========
+authorize is a Ruby on Rails plugin providing a sophisticated Role-Based Access Control (RBAC) system.  It started as a spinoff of Bill Katz's Authorization plugin, but has been substantially tested, debugged and enhanced since then.  Current functionality highlights include:
+
+ * Polymorphic association of ActiveRecord subject models.
+ * Polymorphic association of ActiveRecord trustee models.
+ * Flexible identity mappings to support Group-based roles.
+ * Syntax to support a single ActiveRecord model being both a subject and a trustee.
+ * Dynamic methods on subjects and trustees support domain-specific syntax: user.is_owner_of(widget)? and widget.is_owned_by?(user)
+ * Class-level role support (user.is_moderator_of?(Post)
+ * Generic/global-level role support (user.is_administrator?) 
+ * Performance-optimized Domain-Specific Language (DSL) for more sophisticated predicates (available in ActionController at controller and action level).
+
+For more information on the theory of RBAC, see http://en.wikipedia.org/wiki/Role-based_access_control, but note that the term "subject" is used where this plugin uses the term "trustee".
+
+----------------
+
 The authorize plugin extends ActionController with the ability to check permissions and react accordingly.  There are two approaches:
 a simple boolean check (permit?) and a more sophisticated predicated block (permit) with exception handling.  In both cases, the method accepts
 a permissions description string expressed in a domain-specific language.  The simplest version of this language is just the name of the required 

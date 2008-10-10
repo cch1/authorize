@@ -1,5 +1,4 @@
 require File.dirname(__FILE__) + '/test_helper.rb'
-require File.dirname(__FILE__) + '/lib/widgets_controller.rb'
 
 class ControllerTest < ActionController::TestCase
   fixtures :users, :widgets, :authorizations
@@ -55,9 +54,7 @@ class ControllerTest < ActionController::TestCase
   end
   
   test 'should find authorizations without identities method' do
-    class DegenerateUser < ActiveRecord::Base
-      acts_as_trustee
-    end
+    class ::DegenerateUser < ActiveRecord::Base; acts_as_trustee; end  
     du = DegenerateUser.create
     du.authorize('steward', widgets(:foo))
     assert_nothing_raised do
