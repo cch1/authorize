@@ -82,7 +82,7 @@ module Authorize
           # Handle model instances
           model_name = $1
           model_symbol = model_name.to_sym
-          if @options[model_symbol]
+          if @options.has_key?(model_symbol)
             @options[model_symbol]
           elsif instance_variables.include?('@' + model_name)
             instance_variable_get('@' + model_name)
