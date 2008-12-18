@@ -24,6 +24,12 @@ class ControllerTest < ActionController::TestCase
     end
   end
 
+  test 'should treat nil subject as global permission check' do
+    assert_nothing_raised do
+      assert !@controller.permit?('owner of w', {:user => users(:chris), :w => nil})
+    end
+  end
+
   test 'should find trustee from current_user method' do
     @controller.instance_variable_set(:@current_user, users(:chris))
     assert_nothing_raised do
