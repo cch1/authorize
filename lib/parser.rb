@@ -38,7 +38,7 @@ module Authorize
         re = /(\w+)\s(?:#{PREPOSITIONS.join('|')})\s(\w+)|\b(?!#{BOOLEANS.join('|')})(\w+)\b/
         string.gsub(re) do |match|
           params = [$1, $2, $3].compact
-          process_term(*params).to_s
+           "process_term('#{params.join("','")}')"
         end
       end
 
