@@ -1,4 +1,4 @@
-RAILS_GEM_VERSION="2.2.2"
+ENV['RAILS_GEM_VERSION'] ||="2.2.2"
 ENV['RAILS_ENV'] ||= 'test'
 require File.expand_path(File.dirname(__FILE__) + "/application/config/environment")
 require 'test_help'
