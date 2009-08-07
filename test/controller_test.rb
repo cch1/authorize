@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/test_helper.rb'
+require File.expand_path(File.dirname(__FILE__) + "/application/test/test_helper.rb")
 
 class ControllerTest < ActionController::TestCase
   fixtures :users, :widgets, :authorizations
@@ -60,12 +60,9 @@ class ControllerTest < ActionController::TestCase
   end
   
   test 'should find authorizations without identities method' do
-    class ::DegenerateUser < ActiveRecord::Base; acts_as_trustee; end  
-    du = DegenerateUser.create
+    du = DegenerateUser.new
     du.authorize('steward', widgets(:foo))
-    assert_nothing_raised do
-      @controller.permit('steward of w', {:user => du, :w => widgets(:foo)})
-    end
+    assert @controller.permit?('steward of w', {:user => du.authorization_token, :w => widgets(:foo)})
   end
 
   test 'should parse simple expression' do

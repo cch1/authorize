@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/test_helper.rb'
+require File.expand_path(File.dirname(__FILE__) + "/application/test/test_helper.rb")
 
 class AuthorizationTest < ActiveSupport::TestCase
   fixtures :users, :widgets, :authorizations
@@ -6,7 +6,7 @@ class AuthorizationTest < ActiveSupport::TestCase
   test 'should have valid references' do
     a = authorizations(:chris_foo)
     assert_equal widgets(:foo), a.subject
-    assert_equal users(:chris), a.trustee
+    assert_equal users(:chris).authorization_token, a.token
     assert_equal 'owner', a.role
   end
   
@@ -19,21 +19,21 @@ class AuthorizationTest < ActiveSupport::TestCase
     assert_equal 3, Authorization.find_effective(widgets(:bar), nil, ['proxy', 'overlord']).size
   end
 
-  test 'should find effective authorizations with array of trustees' do
+  test 'should find effective authorizations with array of tokens' do
     assert_equal 2, Authorization.find_effective(widgets(:bar), [users(:chris), users(:pascale)], nil).size
   end
   
   test 'should find authorized authorizations' do
-    assert_equal 2, Authorization.authorized_find(:all, :trustees => users(:chris)).size
-    assert_equal 1, Authorization.authorized_find(:all, :trustees => users(:pascale)).size
+    assert_equal 2, Authorization.authorized_find(:all, :tokens => users(:chris)).size
+    assert_equal 1, Authorization.authorized_find(:all, :tokens => users(:pascale)).size
   end
   
   test 'should find authorized authorizations including generic authorizations' do
-    assert_equal 4, Authorization.authorized_find(:all, :trustees => users(:chris), :roles => 'overlord').size
+    assert_equal 4, Authorization.authorized_find(:all, :tokens => users(:chris), :roles => 'overlord').size
   end
 
   test 'should find authorized authorizations including class authorizations' do
-    assert_equal 3, Authorization.authorized_find(:all, :trustees => users(:alex), :roles => 'overlord').size
+    assert_equal 3, Authorization.authorized_find(:all, :tokens => users(:alex), :roles => 'overlord').size
   end
   
   test 'should find effective authorizations' do

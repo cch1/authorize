@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/test_helper.rb'
+require File.expand_path(File.dirname(__FILE__) + "/application/test/test_helper.rb")
 
 class TrusteeTest < ActiveSupport::TestCase
   fixtures :users, :widgets, :authorizations
@@ -44,5 +44,12 @@ class TrusteeTest < ActiveSupport::TestCase
   test 'should be unauthorizable generically' do
     users(:chris).unauthorize('overlord')
     assert !users(:chris).authorized?('overlord')
+  end
+  
+  test 'should authorize degenerate user' do
+    du = DegenerateUser.new
+    assert_difference("Authorization.count", 1) do
+      du.authorize('steward', widgets(:foo))
+    end
   end
 end

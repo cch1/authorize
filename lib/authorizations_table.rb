@@ -9,9 +9,11 @@ module Authorize
       end
       
       module ClassMethods
-        def acts_as_trustee
-          has_many :authorizations, :as => :trustee, :dependent => :delete_all
-          has_many :permissions, :as => :trustee, :class_name => 'Authorization', :dependent => :delete_all
+        def acts_as_trustee(associate = true)
+          if associate
+            has_many :authorizations, :primary_key => 'authorization_token', :foreign_key => 'token', :dependent => :delete_all
+            has_many :permissions, :primary_key => 'authorization_token', :foreign_key => 'token', :class_name => 'Authorization', :dependent => :delete_all
+          end
           include Authorize::AuthorizationsTable::TrusteeExtensions::InstanceMethods
           include Authorize::Identity::TrusteeExtensions::InstanceMethods   # Provides all kinds of dynamic sugar via method_missing
         end
@@ -25,7 +27,7 @@ module Authorize
         def authorize(role, subject = nil, parent = nil)
           auth = get_auth_for_trustee(role, subject)
           if auth.nil?
-            logger.debug "#{self} authorized as #{role} over #{subject} (derived from #{parent})"
+            Authorization.logger.debug "#{self} authorized as #{role} over #{subject} (derived from #{parent})"
             attrs = {:role => role}
             if subject.is_a? Class
               attrs.merge!(:subject_type => subject.to_s)
@@ -64,7 +66,7 @@ module Authorize
     end
         
     module ModelExtensions
-      ConditionClause = "EXISTS (SELECT 1 FROM authorizations a WHERE (a.subject_type IS NULL OR (a.subject_type = ? AND (a.subject_id = ?.? OR a.subject_id IS NULL))) AND a.trustee_id IN (?))"
+      ConditionClause = "EXISTS (SELECT 1 FROM authorizations a WHERE (a.subject_type IS NULL OR (a.subject_type = ? AND (a.subject_id = ?.? OR a.subject_id IS NULL))) AND a.token IN (?))"
       # The above statement does not optimize well on MySQL 5.0, probably due to the presence of NULLs and ORs.  Forcing the use of an appropriate index solves the problem. 
       # Another (temporary) solution was to delete the other indices that caused MySQL to poorly optimize queries with this condition.  When other indices are required, consider the following query: 
 #      ConditionClause = "EXISTS (SELECT true FROM authorizations a USE INDEX (subject_trustee_role) WHERE (a.subject_type IS NULL OR (a.subject_type = '%s' AND (a.subject_id = %s.%s OR a.subject_id IS NULL))) AND a.trustee_id IN (%s) %s)"
@@ -105,7 +107,7 @@ module Authorize
         
         # Count the number of persisted model instances for which the trustee(s) are authorized.  The interface
         # to AR::Base.count is extended with the following options:
-        #   * trustees  an array of trustees whose authorizations are to be searched (default comes from default_identities class method)
+        #   * tokens  an array of tokens whose authorizations are to be searched (default comes from default_identities class method)
         #   * roles     an array of roles to be searched
         def authorized_count(*args)
           column_name = :all
@@ -118,20 +120,20 @@ module Authorize
             options = options.dup
           end
           options ||= {}
-          trustees = options.delete(:trustees) || Authorization.default_identities
-          with_scope(:find => authorized_conditions(trustees, options.delete(:roles))) do
+          tokens = options.delete(:tokens) || Authorization.default_identities
+          with_scope(:find => authorized_conditions(tokens, options.delete(:roles))) do
             count(column_name, options)
           end
         end
           
         # Find persisted model instances for which the trustee(s) are authorized.  The interface to AR::Base.find
         # is extended with the following options:
-        #   * trustees  an array of trustees whose authorizations are to be searched (default comes from default_identities class method)
+        #   * tokens  an array of tokens whose authorizations are to be searched (default comes from default_identities class method)
         #   * roles     an array of roles to be searched
         def authorized_find(*args)
           options = args.last.is_a?(Hash) ? args.pop.dup : {}
-          trustees = options.delete(:trustees) || Authorization.default_identities
-          with_scope(:find => authorized_conditions(trustees, options.delete(:roles))) do
+          tokens = options.delete(:tokens) || Authorization.default_identities
+          with_scope(:find => authorized_conditions(tokens, options.delete(:roles))) do
             find(args.first, options)
           end
         end
@@ -144,8 +146,8 @@ module Authorize
         # Build a SQL WHERE clause element that restricts model queries to return only authorized instances.  Eligible
         # authorizations can be restricted by role (default: all roles) and by trustee (default: default_identities). 
         # TODO: Optimize query to use '=' instead of the IN () construct when only a single role or trustee is provided.
-        def authorized_conditions(trustees = Authorization.default_identities, roles = nil)
-          conditions = [ConditionClause, self.to_s, self.table_name, self.primary_key, trustees]
+        def authorized_conditions(tokens = Authorization.default_identities, roles = nil)
+          conditions = [ConditionClause, self.to_s, self.table_name, self.primary_key, tokens]
           if roles
             conditions[0] = ConditionClause.dup.insert(-2, " AND a.role IN (?)")
             conditions << roles

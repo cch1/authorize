@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/test_helper.rb'
+require File.expand_path(File.dirname(__FILE__) + "/application/test/test_helper.rb")
 
 class SubjectTest < ActiveSupport::TestCase
   fixtures :users, :widgets, :authorizations
@@ -6,7 +6,7 @@ class SubjectTest < ActiveSupport::TestCase
   test 'should identify subjections' do
     assert s = widgets(:foo).subjections
     assert_equal 1, s.size
-    assert_equal users(:chris), s.first.trustee
+    assert_equal users(:chris).authorization_token, s.first.token
   end
 
   test 'should know it is subjected' do
@@ -29,23 +29,23 @@ class SubjectTest < ActiveSupport::TestCase
   end
 
   test 'should be findable when authorized' do
-    assert_equal 1, Widget.authorized_find(:all, :trustees => [users(:pascale).id]).size
-    assert_equal 3, Widget.authorized_find(:all, :trustees => [users(:chris).id]).size
-    assert_equal 1, Widget.authorized_find(:all, :trustees => [users(:chris).id], :roles => ['owner']).size
+    assert_equal 1, Widget.authorized_find(:all, :tokens => users(:pascale).authorization_tokens).size
+    assert_equal 3, Widget.authorized_find(:all, :tokens => users(:chris).authorization_tokens).size
+    assert_equal 1, Widget.authorized_find(:all, :tokens => users(:chris).authorization_tokens, :roles => ['owner']).size
   end
 
   test 'should be findable when authorized generically' do
-    assert_equal 3, Widget.authorized_find(:all, :trustees => [users(:chris).id], :roles => ['overlord']).size
+    assert_equal 3, Widget.authorized_find(:all, :tokens => [users(:chris).id], :roles => ['overlord']).size
   end
 
   test 'should be countable when authorized' do
-    assert_equal 1, Widget.authorized_count(:all, :trustees => [users(:pascale).id])
-    assert_equal 3, Widget.authorized_count(:all, :trustees => [users(:chris).id])
-    assert_equal 1, Widget.authorized_count(:all, :trustees => [users(:chris).id], :roles => ['owner'])
+    assert_equal 1, Widget.authorized_count(:all, :tokens => [users(:pascale).id])
+    assert_equal 3, Widget.authorized_count(:all, :tokens => [users(:chris).id])
+    assert_equal 1, Widget.authorized_count(:all, :tokens => [users(:chris).id], :roles => ['owner'])
   end
 
   test 'should be countable when authorized generically' do
-    assert_equal 3, Widget.authorized_count(:all, :trustees => [users(:chris).id], :roles => ['overlord'])
+    assert_equal 3, Widget.authorized_count(:all, :tokens => [users(:chris).id], :roles => ['overlord'])
   end
 
   # The authorized_{find, count} methods automatically check User.current.identities when searching for authorized identities.

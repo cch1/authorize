@@ -3,7 +3,7 @@ class User < ActiveRecord::Base
   
   acts_as_trustee
   
-  def identities
-    [self.id]
+  def authorization_tokens
+    [self.authorization_token]
   end
 end
