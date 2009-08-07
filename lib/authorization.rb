@@ -4,23 +4,24 @@
 # generically (for all classes and objects).
 class Authorization < ActiveRecord::Base
   belongs_to :subject, :polymorphic => true
-  
+
   validates_presence_of :role
   validates_presence_of :token
+  validates_presence_of :subject, :if => :subject_id
 
   ConditionClause = "token IN (?) OR EXISTS (SELECT 1 FROM authorizations a WHERE (a.subject_type IS NULL OR (a.subject_type = authorizations.subject_type AND (a.subject_id IS NULL OR a.subject_id = authorizations.subject_id))) AND a.token IN (?) AND a.role IN (?))"
   OwnershipRoles = %w(owner proxy)
 
-  def self.generic_authorizations(token)
-    self.find(:all, :conditions => {:subject_type => nil, :subject_id => nil, :token => token})
+  def self.generic_authorizations(tokens)
+    self.find(:all, :conditions => {:subject_type => nil, :subject_id => nil, :token => tokens})
   end
-  
+
   # Returns the effective authorizations for a subject. The subject can be any one of the following
   #   nil       generic/global authorizations are returned
   #   Class     generic/global and class authorizations are returned
   #   Instance  generic/global, class- subject-specific authorizations are returned.
-  # The token and role paramaters can be scalars or arrays.  The token elements can be AR objects or ids.
-  def self.find_effective(subject = nil, token = nil, role = nil)
+  # The tokens and roles paramaters can be scalars or arrays.  The token elements can be AR objects or ids.
+  def self.find_effective(subject = nil, tokens = nil, roles = nil)
     if subject.is_a?(NilClass) then
       subject_conditions = ["subject_type IS NULL"]
     elsif subject.is_a?(Class) then
@@ -30,8 +31,8 @@ class Authorization < ActiveRecord::Base
     end
     self.with_scope(:find => {:conditions => subject_conditions}) do
       conditions = {}
-      conditions[:token] = token if token
-      conditions[:role] = role if role
+      conditions[:token] = tokens if tokens
+      conditions[:role] = roles if roles
       self.find(:all, :conditions => conditions)
     end
   end
@@ -79,11 +80,7 @@ class Authorization < ActiveRecord::Base
     return subject_type.constantize unless subject_id
     return subject || '!Broken Link!'
   end
-  
-  def broken_link?
-    subject.nil? && !subject_id.nil?
-  end
-  
+
   def to_s
     "#{token} as #{role} over #{subj || '!Everything!'}"
   end

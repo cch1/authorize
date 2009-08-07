@@ -3,6 +3,17 @@ require File.expand_path(File.dirname(__FILE__) + "/application/test/test_helper
 class AuthorizationTest < ActiveSupport::TestCase
   fixtures :users, :widgets, :authorizations
 
+  test 'should create' do
+    a = Authorization.new(:token => "123", :role => "liege", :subject_type => 'Widget', :subject_id => widgets(:bar).id)
+    assert a.valid?
+  end
+
+  test 'should not validate with invalid subject_id' do
+    a = Authorization.new(:token => "123", :role => "liege", :subject_type => 'Widget', :subject_id => 1)
+    assert !a.valid?
+    assert a.errors[:subject]
+  end
+
   test 'should have valid references' do
     a = authorizations(:chris_foo)
     assert_equal widgets(:foo), a.subject
