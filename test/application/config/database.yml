@@ -4,10 +4,10 @@ sqlite3_memory: &sqlite3_memory
   verbosity: quiet
 sqlite: &sqlite
   adapter: sqlite
-  dbfile: db/plugin_test.sqlite.db
+  database: db/plugin_test.sqlite.db
 sqlite3: &sqlite3
   adapter: sqlite3
-  dbfile: db/plugin_test.sqlite3.db
+  database: db/plugin_test.sqlite3.db
 postgresql: &postgresql
   adapter: postgresql
   username: postgres
@@ -20,4 +20,6 @@ mysql: &mysql
   password:
   database: plugin_test
 test:
+  <<: *<%= ENV['DB'] || 'sqlite3_memory' %>
+development:
   <<: *<%= ENV['DB'] || 'sqlite3_memory' %>
