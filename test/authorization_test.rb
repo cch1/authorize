@@ -25,7 +25,17 @@ class AuthorizationTest < ActiveSupport::TestCase
     assert gas = Authorization.generic_authorizations(users(:chris))
     assert 1, gas.size
   end
-  
+
+  test 'should have correct conditions with named scopes' do
+    assert_equal 1, Authorization.as(%w(proxy overlord)).with(Fixtures.identify(:chris)).count
+  end
+
+  test 'should have correct subject conditions with scope' do
+    assert_equal authorizations(:overlord), Authorization.for(nil).first
+    assert_equal authorizations(:alex_widget), Authorization.for(Widget).first
+    assert_equal authorizations(:chris_foo), Authorization.for(widgets(:foo)).first
+  end
+
   test 'should find effective authorizations with array of roles' do
     assert_equal 3, Authorization.find_effective(widgets(:bar), nil, ['proxy', 'overlord']).size
   end

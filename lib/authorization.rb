@@ -8,6 +8,19 @@ class Authorization < ActiveRecord::Base
   validates_presence_of :role
   validates_presence_of :token
   validates_presence_of :subject, :if => :subject_id
+  
+  named_scope :as, lambda {|roles| {:conditions => {:role => roles}}}
+  named_scope :with, lambda {|tokens| {:conditions => {:token => tokens}}}
+  named_scope :for, lambda {|subject|
+    subject_conditions = if subject.is_a?(NilClass) then
+       {:subject_id => nil, :subject_type => nil}
+    elsif subject.is_a?(Class) then
+       {:subject_id => nil, :subject_type => subject.to_s}
+    else
+       {:subject_id => subject.id, :subject_type => subject.class.to_s}
+    end
+    {:conditions => subject_conditions}
+  }
 
   ConditionClause = "token IN (?) OR EXISTS (SELECT 1 FROM authorizations a WHERE (a.subject_type IS NULL OR (a.subject_type = authorizations.subject_type AND (a.subject_id IS NULL OR a.subject_id = authorizations.subject_id))) AND a.token IN (?) AND a.role IN (?))"
   OwnershipRoles = %w(owner proxy)
