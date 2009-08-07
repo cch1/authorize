@@ -45,7 +45,7 @@ class Authorization < ActiveRecord::Base
   # This method encapsulates an ugly-but-useful coupling between models and the User.current class method.
   # Override it to specify which trustees should be used by default to perform an authorized_{find, count}.
   def self.default_identities 
-    raise CannotObtainUserObject unless User && User.current 
+    raise Authorize::CannotObtainUserObject unless User && User.current 
     User.current.respond_to?(:identities) ? User.current.identities : [User.current]
   end
   
