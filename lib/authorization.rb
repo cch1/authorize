@@ -3,6 +3,8 @@
 # "moderator" for an instance of a class discussion, or for the Discussion class, or 
 # generically (for all classes and objects).
 class Authorization < ActiveRecord::Base
+  ConditionClause = "token IN (?) OR EXISTS (SELECT 1 FROM authorizations a WHERE (a.subject_type IS NULL OR (a.subject_type = authorizations.subject_type AND (a.subject_id IS NULL OR a.subject_id = authorizations.subject_id))) AND a.token IN (?) AND a.role IN (?))"
+
   belongs_to :subject, :polymorphic => true
 
   validates_presence_of :role
@@ -35,55 +37,14 @@ class Authorization < ActiveRecord::Base
     end
     {:conditions => subject_conditions}
   }
+  named_scope :generic, :conditions => {:subject_type => nil, :subject_id => nil}
+  named_scope :authorized, lambda {|tokens, roles|
+    {:conditions => [ConditionClause, tokens, tokens, roles]}
+  }
 
   # The tokens and roles paramaters can be scalars or arrays.  The token elements can be AR objects or ids.
   def self.find_effective(subject = nil, tokens = nil, roles = nil)
     as(roles).with(tokens).over(subject).all
-  end
-  
-  ConditionClause = "token IN (?) OR EXISTS (SELECT 1 FROM authorizations a WHERE (a.subject_type IS NULL OR (a.subject_type = authorizations.subject_type AND (a.subject_id IS NULL OR a.subject_id = authorizations.subject_id))) AND a.token IN (?) AND a.role IN (?))"
-  OwnershipRoles = %w(owner proxy)
-
-  def self.generic_authorizations(tokens)
-    self.find(:all, :conditions => {:subject_type => nil, :subject_id => nil, :token => tokens})
-  end
-
-  def self.authorized_conditions(tokens = default_identities, ownership_roles = nil)
-    {:conditions => [ConditionClause, tokens, tokens, ownership_roles]}
-  end
-  
-  # This method encapsulates an ugly-but-useful coupling between models and the User.current class method.
-  # Override it to specify which tokens should be used by default to perform an authorized_{find, count}.
-  def self.default_identities 
-    raise Authorize::CannotObtainUserObject unless User && User.current 
-    User.current.respond_to?(:identities) ? User.current.identities : [User.current]
-  end
-  
-  def self.authorized_count(*args)
-    column_name = :all
-    if args.size > 0
-      if args[0].is_a?(Hash)
-        options = args[0]
-      else
-        column_name, options = args
-      end
-      options = options.dup
-    end
-    options ||= {}
-    tokens = options.delete(:tokens) || default_identities
-    with_scope(:find => authorized_conditions(tokens, options.delete(:roles))) do
-      count(column_name, options)
-    end
-  end
-    
-  # Find the authorized authorizations.  An Authorization instance is considered authorized if the token is the token of the Authorization
-  # instance, or if the token is the owner of the subject of the Authorization instance (where 'ownership' is determined by the roles option).  
-  def self.authorized_find(*args)
-    options = args.last.is_a?(Hash) ? args.pop.dup : {}
-    tokens = options.delete(:tokens) || default_identities
-    with_scope(:find => authorized_conditions(tokens, options.delete(:roles))) do
-      find(args.first, options)
-    end
   end
   
   def subj

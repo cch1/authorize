@@ -21,9 +21,9 @@ class AuthorizationTest < ActiveSupport::TestCase
     assert_equal 'owner', a.role
   end
   
-  test 'should find generic authorizations' do
-    assert gas = Authorization.generic_authorizations(users(:chris))
-    assert 1, gas.size
+  test 'should scope to generic authorizations' do
+    assert_equal({:conditions => {:subject_type => nil, :subject_id => nil}}, Authorization.generic.proxy_options)
+    assert 1, Authorization.generic.size
   end
 
   test 'should have correct conditions with named scopes' do
@@ -44,17 +44,17 @@ class AuthorizationTest < ActiveSupport::TestCase
     assert_equal 2, Authorization.find_effective(widgets(:bar), [users(:chris).authorization_token, users(:pascale).authorization_token], nil).size
   end
   
-  test 'should find authorized authorizations' do
-    assert_equal 2, Authorization.authorized_find(:all, :tokens => users(:chris).authorization_token).size
-    assert_equal 1, Authorization.authorized_find(:all, :tokens => users(:pascale).authorization_token).size
+  test 'should restrict to authorized scope' do
+    assert_equal 2, Authorization.authorized(users(:chris).authorization_token, nil).count
+    assert_equal 1, Authorization.authorized(users(:pascale).authorization_token, nil).count
   end
   
-  test 'should find authorized authorizations including generic authorizations' do
-    assert_equal 4, Authorization.authorized_find(:all, :tokens => users(:chris).authorization_token, :roles => 'overlord').size
+  test 'should restrict to authorized scope including generic authorizations' do
+    assert_equal 4, Authorization.authorized(users(:chris).authorization_token, 'overlord').count
   end
 
-  test 'should find authorized authorizations including class authorizations' do
-    assert_equal 3, Authorization.authorized_find(:all, :tokens => users(:alex).authorization_token, :roles => 'overlord').size
+  test 'should restrict to authorized scope including class authorizations' do
+    assert_equal 3, Authorization.authorized(users(:alex).authorization_token, 'overlord').count
   end
   
   test 'should find effective authorizations' do
