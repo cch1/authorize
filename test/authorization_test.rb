@@ -27,7 +27,7 @@ class AuthorizationTest < ActiveSupport::TestCase
   end
 
   test 'should have correct conditions with named scopes' do
-    assert_equal 1, Authorization.as(%w(proxy overlord)).with(Fixtures.identify(:chris)).count
+    assert_equal 1, Authorization.as(%w(proxy overlord)).with(Fixtures.identify(:chris_authorization_token)).count
   end
 
   test 'should have correct subject conditions with scope' do
@@ -41,20 +41,20 @@ class AuthorizationTest < ActiveSupport::TestCase
   end
 
   test 'should find effective authorizations with array of tokens' do
-    assert_equal 2, Authorization.find_effective(widgets(:bar), [users(:chris), users(:pascale)], nil).size
+    assert_equal 2, Authorization.find_effective(widgets(:bar), [users(:chris).authorization_token, users(:pascale).authorization_token], nil).size
   end
   
   test 'should find authorized authorizations' do
-    assert_equal 2, Authorization.authorized_find(:all, :tokens => users(:chris)).size
-    assert_equal 1, Authorization.authorized_find(:all, :tokens => users(:pascale)).size
+    assert_equal 2, Authorization.authorized_find(:all, :tokens => users(:chris).authorization_token).size
+    assert_equal 1, Authorization.authorized_find(:all, :tokens => users(:pascale).authorization_token).size
   end
   
   test 'should find authorized authorizations including generic authorizations' do
-    assert_equal 4, Authorization.authorized_find(:all, :tokens => users(:chris), :roles => 'overlord').size
+    assert_equal 4, Authorization.authorized_find(:all, :tokens => users(:chris).authorization_token, :roles => 'overlord').size
   end
 
   test 'should find authorized authorizations including class authorizations' do
-    assert_equal 3, Authorization.authorized_find(:all, :tokens => users(:alex), :roles => 'overlord').size
+    assert_equal 3, Authorization.authorized_find(:all, :tokens => users(:alex).authorization_token, :roles => 'overlord').size
   end
   
   test 'should find effective authorizations' do

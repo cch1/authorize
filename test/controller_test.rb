@@ -46,16 +46,16 @@ class ControllerTest < ActionController::TestCase
   end
 
   test 'should represent authorization with boolean' do
-    assert @controller.permit?('owner of w', {:user => users(:chris), :w => widgets(:foo)})
-    assert !@controller.permit?('proxy of w', {:user => users(:chris), :w => widgets(:foo)})
+    assert @controller.permit?('owner of w', {:user => users(:chris).authorization_token, :w => widgets(:foo)})
+    assert !@controller.permit?('proxy of w', {:user => users(:chris).authorization_token, :w => widgets(:foo)})
   end
 
   test 'should represent authorization with block processing or exception' do
     assert_nothing_raised do
-      @controller.permit('owner of w', {:user => users(:chris), :w => widgets(:foo)}) {}
+      @controller.permit('owner of w', {:user => users(:chris).authorization_token, :w => widgets(:foo)}) {}
     end
     assert_raises Authorize::AuthorizationError do
-      @controller.permit('proxy of w', {:user => users(:chris), :w => widgets(:foo)}) {}
+      @controller.permit('proxy of w', {:user => users(:chris).authorization_token, :w => widgets(:foo)}) {}
     end
   end
   
@@ -66,10 +66,10 @@ class ControllerTest < ActionController::TestCase
   end
 
   test 'should parse simple expression' do
-    assert @controller.permit?('owner of User or owner or owner of w', {:user => users(:chris), :w => widgets(:foo)})
+    assert @controller.permit?('owner of User or owner or owner of w', {:user => users(:chris).authorization_token, :w => widgets(:foo)})
   end
 
   test 'should parse complex expression' do
-    assert @controller.permit?('owner of w and not (owner of User or owner)', {:user => users(:chris), :w => widgets(:foo)})
+    assert @controller.permit?('owner of w and not (owner of User or owner)', {:user => users(:chris).authorization_token, :w => widgets(:foo)})
   end
 end
