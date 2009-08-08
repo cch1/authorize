@@ -50,6 +50,7 @@ class TrusteeTest < ActiveSupport::TestCase
     du = DegenerateUser.new
     assert_difference("Authorization.count", 1) do
       du.authorize('steward', widgets(:foo))
+      assert du.authorized?('steward', widgets(:foo))
     end
   end
 end
