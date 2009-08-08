@@ -21,7 +21,26 @@ class Authorization < ActiveRecord::Base
     end
     {:conditions => subject_conditions}
   }
+  # Returns the effective authorizations over a subject. The subject can be any one of the following
+  #   nil       generic/global authorizations are returned
+  #   Class     generic/global and class authorizations are returned
+  #   Instance  generic/global, class authorizations and subject authorizations are returned.
+  named_scope :over, lambda {|subject|
+    subject_conditions = if subject.is_a?(NilClass) then
+       {:subject_id => nil, :subject_type => nil}
+    elsif subject.is_a?(Class) then
+      ["subject_type IS NULL OR (subject_type = ? AND subject_id IS NULL)", subject.to_s]
+    else
+      ["subject_type IS NULL OR (subject_type = ? AND (subject_id = ? OR subject_id IS NULL))", subject.class.to_s, subject]
+    end
+    {:conditions => subject_conditions}
+  }
 
+  # The tokens and roles paramaters can be scalars or arrays.  The token elements can be AR objects or ids.
+  def self.find_effective(subject = nil, tokens = nil, roles = nil)
+    as(roles).with(tokens).over(subject).all
+  end
+  
   ConditionClause = "token IN (?) OR EXISTS (SELECT 1 FROM authorizations a WHERE (a.subject_type IS NULL OR (a.subject_type = authorizations.subject_type AND (a.subject_id IS NULL OR a.subject_id = authorizations.subject_id))) AND a.token IN (?) AND a.role IN (?))"
   OwnershipRoles = %w(owner proxy)
 
@@ -29,27 +48,6 @@ class Authorization < ActiveRecord::Base
     self.find(:all, :conditions => {:subject_type => nil, :subject_id => nil, :token => tokens})
   end
 
-  # Returns the effective authorizations for a subject. The subject can be any one of the following
-  #   nil       generic/global authorizations are returned
-  #   Class     generic/global and class authorizations are returned
-  #   Instance  generic/global, class- subject-specific authorizations are returned.
-  # The tokens and roles paramaters can be scalars or arrays.  The token elements can be AR objects or ids.
-  def self.find_effective(subject = nil, tokens = nil, roles = nil)
-    if subject.is_a?(NilClass) then
-      subject_conditions = ["subject_type IS NULL"]
-    elsif subject.is_a?(Class) then
-      subject_conditions = ["subject_type IS NULL OR (subject_type = ? AND subject_id IS NULL)", subject.to_s]
-    else
-      subject_conditions = ["subject_type IS NULL OR (subject_type = ? AND (subject_id = ? OR subject_id IS NULL))", subject.class.to_s, subject]
-    end
-    self.with_scope(:find => {:conditions => subject_conditions}) do
-      conditions = {}
-      conditions[:token] = tokens if tokens
-      conditions[:role] = roles if roles
-      self.find(:all, :conditions => conditions)
-    end
-  end
-  
   def self.authorized_conditions(tokens = default_identities, ownership_roles = nil)
     {:conditions => [ConditionClause, tokens, tokens, ownership_roles]}
   end
