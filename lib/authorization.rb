@@ -9,8 +9,8 @@ class Authorization < ActiveRecord::Base
   validates_presence_of :token
   validates_presence_of :subject, :if => :subject_id
   
-  named_scope :as, lambda {|roles| {:conditions => {:role => roles}}}
-  named_scope :with, lambda {|tokens| {:conditions => {:token => tokens}}}
+  named_scope :as, lambda {|roles| roles.nil? ? {} : {:conditions => {:role => roles}}}
+  named_scope :with, lambda {|tokens| tokens.nil? ? {} : {:conditions => {:token => tokens}}}
   named_scope :for, lambda {|subject|
     subject_conditions = if subject.is_a?(NilClass) then
        {:subject_id => nil, :subject_type => nil}
