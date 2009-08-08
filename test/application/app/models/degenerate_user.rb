@@ -6,7 +6,7 @@ class ::DegenerateUser
     object_id
   end
 
-  def authorizations # must return a named scope or an association or a class
-    Authorization.scoped_by_token(authorization_token)
+  def permissions # must return a named scope or an association or a class
+    Authorization.with(authorization_token)
   end
 end  

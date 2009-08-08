@@ -2,12 +2,12 @@ require File.dirname(__FILE__) + '/identity'
 
 module Authorize
   module AuthorizationsTable
-  
+
     module TrusteeExtensions
       def self.included( recipient )
         recipient.extend( ClassMethods )
       end
-      
+
       module ClassMethods
         def acts_as_trustee(associate = true)
           if associate
@@ -18,50 +18,24 @@ module Authorize
           include Authorize::Identity::TrusteeExtensions::InstanceMethods   # Provides all kinds of dynamic sugar via method_missing
         end
       end
-      
+
       module InstanceMethods
         def authorized?(role, subject = nil)
-          get_auth_for_trustee(role, subject) ? true : false
+          !!permissions.as(role).for(subject).any?
         end
-        
+
         def authorize(role, subject = nil, parent = nil)
-          auth = get_auth_for_trustee(role, subject)
-          if auth.nil?
+          unless auth = permissions.as(role).for(subject).first
+            attrs = respond_to?(:parent) ? {:parent => parent} : {} # Support tree-structured authorizations.
+            auth = permissions.as(role).for(subject).create(attrs)
             Authorization.logger.debug "#{self} authorized as #{role} over #{subject} (derived from #{parent})"
-            attrs = {:role => role}
-            if subject.is_a? Class
-              attrs.merge!(:subject_type => subject.to_s)
-            elsif subject
-              attrs.merge!(:subject => subject)
-            end
-            attrs.merge!(:parent => parent) if respond_to?(:parent) # Support tree-structured authorizations.
-            auth = self.authorizations.create(attrs)
           end
           auth
         end
-        
-        def unauthorize(role, subject = nil)
-          auth = get_auth_for_trustee(role, subject)
-          if auth
-            self.authorizations.delete(auth)
-          end
-        end
 
-        private
-        
-        def get_auth_for_trustee(role, subject)
-          if subject.is_a? Class
-            subject_type = subject.to_s
-            subject_id = nil
-          elsif subject
-            subject_type = subject.class.to_s
-            subject_id = subject.id
-          else
-            subject_type = nil
-            subject_id = nil
-          end
-          self.authorizations.find(:first, :conditions => {:role => role, :subject_type => subject_type, :subject_id => subject_id})
-        end        
+        def unauthorize(role, subject = nil)
+          permissions.as(role).for(subject).delete_all
+        end
       end 
     end
         
@@ -74,107 +48,56 @@ module Authorize
       def self.included(recipient)
         recipient.extend(ClassMethods)
       end
-      
+
       module ClassMethods
         def acts_as_subject
           has_many :subjections, :as => :subject, :class_name => 'Authorization', :dependent => :delete_all
-          # Handy fluff association -but of limited value.
-#          Authorization.belongs_to 'subjected_' + self.to_s.underscore, :foreign_key => "subject_id"
           include Authorize::AuthorizationsTable::SubjectExtensions::InstanceMethods
           include Authorize::Identity::SubjectExtensions::InstanceMethods   # Provides all kinds of dynamic sugar via method_missing
           extend Authorize::AuthorizationsTable::SubjectExtensions::SingletonMethods
+          named_scope :authorized, lambda {|tokens, roles|
+            tokens = [tokens].flatten
+            conditions = [ConditionClause, self.to_s, self.table_name, self.primary_key, tokens]
+            if roles
+              conditions[0] = ConditionClause.dup.insert(-2, " AND a.role IN (?)")
+              conditions << [roles].flatten.map(&:to_s)
+            end
+            {:conditions => conditions}
+          }
         end
       end
 
       module SingletonMethods
         def subjected?(role, trustee)
-          get_auth_for_subject(role, trustee) ? true : false
-        end
-        
-        def subject(role, trustee, parent = nil)
-          trustee.authorize role, self, parent
-        end
-        
-        def unsubject(role, trustee)
-          trustee.unauthorize role, self
-        end
-        
-        def subjections(trustee = nil)
-          conditions = {:subject_type => self.to_s, :subject_id => nil}
-          conditions[:trustee_id] = trustee if trustee # Isn't trustee mandatory?
-          Authorization.find(:all, :conditions => conditions)
-        end
-        
-        # Count the number of persisted model instances for which the trustee(s) are authorized.  The interface
-        # to AR::Base.count is extended with the following options:
-        #   * tokens  an array of tokens whose authorizations are to be searched (default comes from default_identities class method)
-        #   * roles     an array of roles to be searched
-        def authorized_count(*args)
-          column_name = :all
-          if args.size > 0
-            if args[0].is_a?(Hash)
-              options = args[0]
-            else
-              column_name, options = args
-            end
-            options = options.dup
-          end
-          options ||= {}
-          tokens = options.delete(:tokens) || Authorization.default_identities
-          with_scope(:find => authorized_conditions(tokens, options.delete(:roles))) do
-            count(column_name, options)
-          end
-        end
-          
-        # Find persisted model instances for which the trustee(s) are authorized.  The interface to AR::Base.find
-        # is extended with the following options:
-        #   * tokens  an array of tokens whose authorizations are to be searched (default comes from default_identities class method)
-        #   * roles     an array of roles to be searched
-        def authorized_find(*args)
-          options = args.last.is_a?(Hash) ? args.pop.dup : {}
-          tokens = options.delete(:tokens) || Authorization.default_identities
-          with_scope(:find => authorized_conditions(tokens, options.delete(:roles))) do
-            find(args.first, options)
-          end
-        end
-        
-        private          
-        def get_auth_for_subject(role, trustee)
-          trustee.authorizations.find(:first, :conditions => {:role => role, :subject_type => self.to_s, :subject_id => nil})
+          trustee.authorized?(role, self)
         end
 
-        # Build a SQL WHERE clause element that restricts model queries to return only authorized instances.  Eligible
-        # authorizations can be restricted by role (default: all roles) and by trustee (default: default_identities). 
-        # TODO: Optimize query to use '=' instead of the IN () construct when only a single role or trustee is provided.
-        def authorized_conditions(tokens = Authorization.default_identities, roles = nil)
-          conditions = [ConditionClause, self.to_s, self.table_name, self.primary_key, tokens]
-          if roles
-            conditions[0] = ConditionClause.dup.insert(-2, " AND a.role IN (?)")
-            conditions << roles
-          end
-          {:conditions => conditions}
+        def subject(role, trustee, parent = nil)
+          trustee.authorize(role, self, parent)
+        end
+
+        def unsubject(role, trustee)
+          trustee.unauthorize(role, self)
+        end
+
+        def subjections
+          Authorization.for(self)
         end
       end     
 
       module InstanceMethods
         def subjected?(role, trustee)
-          get_auth_for_subject(role, trustee) ? true : false
-        end
-        
-        def subject(role, trustee, parent = nil)
-          trustee.authorize role, self, parent
-        end
-      
-        def unsubject(role, trustee)
-          trustee.unauthorize role, self
+          trustee.authorized?(role, self)
         end
 
-        private        
-        def get_auth_for_subject(role, trustee)
-          trustee.authorizations.find(:first, :conditions => {:role => role, :subject_type => self.class.to_s, :subject_id => self.id})
+        def subject(role, trustee, parent = nil)
+          trustee.authorize(role, self, parent)
+        end
+
+        def unsubject(role, trustee)
+          trustee.unauthorize(role, self)
         end
       end    
     end
-    
   end
 end
