@@ -76,7 +76,7 @@ module Authorize
       end # InstanceMethods Module
     end # TrusteeExtensions Module
     
-    module ModelExtensions
+    module SubjectExtensions
       module InstanceMethods
 
         def method_missing( method_sym, *args )

@@ -65,7 +65,7 @@ module Authorize
       end 
     end
         
-    module ModelExtensions
+    module SubjectExtensions
       ConditionClause = "EXISTS (SELECT 1 FROM authorizations a WHERE (a.subject_type IS NULL OR (a.subject_type = ? AND (a.subject_id = ?.? OR a.subject_id IS NULL))) AND a.token IN (?))"
       # The above statement does not optimize well on MySQL 5.0, probably due to the presence of NULLs and ORs.  Forcing the use of an appropriate index solves the problem. 
       # Another (temporary) solution was to delete the other indices that caused MySQL to poorly optimize queries with this condition.  When other indices are required, consider the following query: 
@@ -80,9 +80,9 @@ module Authorize
           has_many :subjections, :as => :subject, :class_name => 'Authorization', :dependent => :delete_all
           # Handy fluff association -but of limited value.
 #          Authorization.belongs_to 'subjected_' + self.to_s.underscore, :foreign_key => "subject_id"
-          include Authorize::AuthorizationsTable::ModelExtensions::InstanceMethods
-          include Authorize::Identity::ModelExtensions::InstanceMethods   # Provides all kinds of dynamic sugar via method_missing
-          extend Authorize::AuthorizationsTable::ModelExtensions::SingletonMethods
+          include Authorize::AuthorizationsTable::SubjectExtensions::InstanceMethods
+          include Authorize::Identity::SubjectExtensions::InstanceMethods   # Provides all kinds of dynamic sugar via method_missing
+          extend Authorize::AuthorizationsTable::SubjectExtensions::SingletonMethods
         end
       end
 
