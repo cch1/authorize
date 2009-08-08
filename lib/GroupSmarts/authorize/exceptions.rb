@@ -9,7 +9,7 @@ module Authorize #:nodoc:
   end
   
   # Raised when we can't find the current user
-  class CannotObtainUserObject < AuthorizationError
+  class CannotObtainTokens < AuthorizationError
   end
   
   # Raised when an authorization expression contains a model class that doesn't exist

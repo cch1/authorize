@@ -6,14 +6,14 @@ class ControllerClassTest < ActionController::TestCase
   tests ThingyController
   
   test 'should not perform action' do
-    @controller.instance_variable_set(:@current_user, users(:pascale).authorization_token)
+    @controller.authorization_tokens << users(:pascale).authorization_token
     assert_raises Authorize::AuthorizationError do
       get :index
     end
   end
 
   test 'should perform action' do
-    @controller.instance_variable_set(:@current_user, users(:chris).authorization_token)
+    @controller.authorization_tokens << users(:chris).authorization_token
     assert_nothing_raised do
       get :index
       assert_response :success

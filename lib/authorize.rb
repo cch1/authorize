@@ -10,8 +10,7 @@ module Authorize
       end
     end
     
-    module ControllerClassMethods
-      
+    module ControllerClassMethods      
       # Allow class-level authorization check.
       # permit is used in a before_filter fashion and passes arguments to the before_filter. 
       def permit(authorization_expression, *args)
@@ -52,23 +51,12 @@ module Authorize
       end
             
       private
-      def authorized_identities
-        u = @options[:user] || get_user
-        raise CannotObtainUserObject unless u || @options[:allow_guests]
-        u.respond_to?(:identities) ? u.identities : [u]
-      end
-      
       # Handle authorization failure within permit.  Override this callback in your ApplicationController
       # for custom behavior.  This method typically returns the value for the around_filter
       def handle_authorization_failure
         raise Authorize::AuthorizationError, 'You are not authorized for the requested operation.'
       end
 
-      # Try to find the relevant user through several classic hacks.
-      def get_user
-        (methods.include?('current_user') && current_user) || (Object.const_defined?('User') && User.current)
-      end
-      
       # Try to find a model to query for permissions
       def get_model(str)
         if str =~ /\s*([A-Z]+\w*)\s*/
@@ -91,6 +79,14 @@ module Authorize
           end
         end
       end
+
+      # Override this method in your controller if you want to use a different technique.
+      # Get authorization tokens appropriate for this request as accumulated in the #authorization_tokens array.
+      def get_tokens
+        ([@options[:token]] + [authorization_tokens]).flatten.uniq.compact.tap do |ts|
+          raise CannotObtainTokens if ts.empty?
+        end
+      end      
     end
   end
 end

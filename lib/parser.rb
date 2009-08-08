@@ -23,7 +23,7 @@ module Authorize
         begin
           expr = replace_terms(str)
           instance_eval(expr)
-        rescue CannotObtainModelObject, CannotObtainUserObject => e
+        rescue CannotObtainModelObject, CannotObtainModelClass, CannotObtainTokens => e
           raise e
         rescue => e
           raise AuthorizationExpressionInvalid, "Cannot parse authorization expression:#{e.to_s}"
@@ -46,9 +46,9 @@ module Authorize
       # We cache the authorized roles to optimize the common pattern of "role1 of widget or role2 of widget or role3 of widget".
       def process_term(role, model_name = nil)
         subject = model_name.nil? ? nil : get_model(model_name)
-        logger.debug("***Checking for authorization of #{authorized_identities.join(', ')} as #{role} over #{subject.to_s}")
+        logger.debug("***Checking for authorization of #{get_tokens.join(', ')} as #{role} over #{subject.to_s}")
         @authorized_roles ||= {}
-        @authorized_roles[subject] ||= Authorization.find_effective(subject, authorized_identities).map(&:role)
+        @authorized_roles[subject] ||= Authorization.find_effective(subject, get_tokens).map(&:role)
         @authorized_roles[subject].include?(role)
       end
     end
