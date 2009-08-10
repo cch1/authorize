@@ -25,7 +25,6 @@ module Authorize
       # Simple predicate for authorization.  Options are:
       #   allow_guests  should the authorization expression be evaluated even when no trustees are obvious?
       def permit?(authorization_expression, options = {})
-        options.reverse_merge!({:allow_guests => false})
         @options = options
         parse_authorization_expression(authorization_expression)
       end
