@@ -15,14 +15,10 @@ module Authorize
       #
       # We let Ruby do the heavy lifting by identifying terms and replacing them with their boolean equivalents
       # and then letting Ruby eval the resulting boolean expression.
-      def parse_authorization_expression(str)
-        if str =~ /[^A-Za-z0-9_\(\)\s]/
-          raise AuthorizationExpressionInvalid, "Invalid authorization expression (#{str})"
-          return false
-        end
+      def parse(str)
+        raise AuthorizationExpressionInvalid, "Invalid authorization expression (#{str})" unless str =~ /[A-Za-z0-9_\(\)\s]*/ 
         begin
-          expr = replace_terms(str)
-          instance_eval(expr)
+          replace_terms(str)
         rescue CannotObtainModelObject, CannotObtainModelClass, CannotObtainTokens => e
           raise e
         rescue => e
@@ -46,7 +42,7 @@ module Authorize
       # We cache the authorized roles to optimize the common pattern of "role1 of widget or role2 of widget or role3 of widget".
       def process_term(role, model_name = nil)
         subject = model_name.nil? ? nil : get_model(model_name)
-        logger.debug("***Checking for authorization of #{get_tokens.join(', ')} as #{role} over #{subject.to_s}")
+        Authorization.logger.debug("***Checking for authorization of #{get_tokens.join(', ')} as #{role} over #{subject.to_s}")
         @authorized_roles ||= {}
         @authorized_roles[subject] ||= Authorization.find_effective(subject, get_tokens).map(&:role)
         @authorized_roles[subject].include?(role)

@@ -20,13 +20,9 @@ module Authorize
     end
     
     module ControllerInstanceMethods
-      include Authorize::Base::EvalParser  # RecursiveDescentParser is another option
-      
-      # Simple predicate for authorization.  Options are:
-      #   allow_guests  should the authorization expression be evaluated even when no trustees are obvious?
+      # Simple predicate for authorization.
       def permit?(authorization_expression, options = {})
-        @options = options
-        parse_authorization_expression(authorization_expression)
+        Expression.new(authorization_expression, self, options).eval
       end
 
       # Allow method-level authorization checks.
@@ -48,6 +44,24 @@ module Authorize
       def handle_authorization_failure
         raise Authorize::AuthorizationError, 'You are not authorized for the requested operation.'
       end
+    end
+
+    # Represents an authorization expression, including evaluation options and cached database responses.
+    class Expression
+      attr_reader :expression, :controller, :options
+
+      include Authorize::Base::EvalParser  # RecursiveDescentParser is another option
+
+      # Instances depend on the controller for resolving subject references and available tokens. 
+      def initialize(expression, controller, options = {})
+        @expression = expression
+        @controller = controller
+        @options = options
+      end
+
+      def eval
+        instance_eval(parse(expression))
+      end
 
       # Try to find a model to query for permissions
       def get_model(str)
@@ -62,25 +76,28 @@ module Authorize
           # Handle model instances
           model_name = $1
           model_symbol = model_name.to_sym
-          if @options.has_key?(model_symbol)
-            @options[model_symbol]
-          elsif instance_variables.include?('@' + model_name)
-            instance_variable_get('@' + model_name)
+          if options.has_key?(model_symbol)
+            options[model_symbol]
+          elsif controller.instance_variables.include?('@' + model_name)
+            controller.instance_variable_get('@' + model_name)
           else
             raise CannotObtainModelObject, "Couldn't find model (#{str}) in hash or as an instance variable"
           end
         end
       end
 
-      # Override this method in your controller if you want to use a different technique.
       # Get authorization tokens appropriate for this request as accumulated in the #authorization_tokens array.
       def get_tokens
         begin
-          ([@options[:token]] + [authorization_tokens]).flatten.uniq.compact
+          ([options[:token]] + [controller.authorization_tokens]).flatten.uniq.compact
         rescue => e
           raise CannotObtainTokens, "Cannot determine authorization tokens: #{e}"
         end
       end      
+
+      def to_s
+        expression
+      end
     end
   end
 end
