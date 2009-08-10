@@ -83,8 +83,10 @@ module Authorize
       # Override this method in your controller if you want to use a different technique.
       # Get authorization tokens appropriate for this request as accumulated in the #authorization_tokens array.
       def get_tokens
-        ([@options[:token]] + [authorization_tokens]).flatten.uniq.compact.tap do |ts|
-          raise CannotObtainTokens if ts.empty?
+        begin
+          ([@options[:token]] + [authorization_tokens]).flatten.uniq.compact
+        rescue => e
+          raise CannotObtainTokens, "Cannot determine authorization tokens: #{e}"
         end
       end      
     end

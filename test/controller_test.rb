@@ -11,9 +11,18 @@ class ControllerTest < ActionController::TestCase
     end
   end
 
-  test 'should fail without trustee' do
-    assert_raises Authorize::CannotObtainTokens do
-      @controller.permit?('owner of w', {:w => widgets(:foo)})
+  test 'should not fail with no tokens' do
+    assert_nothing_raised do
+      assert !@controller.permit?('owner of w', {:w => widgets(:foo)})
+    end
+  end
+
+  uses_mocha "mock an exception fetching auth tokens" do
+    test 'should raise exception if tokens indeterminate' do
+      @controller.stubs(:authorization_tokens).raises(RuntimeError)
+      assert_raises Authorize::CannotObtainTokens do
+        @controller.permit?('owner of w', {:w => widgets(:foo)})
+      end
     end
   end
 
