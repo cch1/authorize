@@ -1,14 +1,13 @@
 Authorize
 =========
-authorize is a Ruby on Rails plugin providing a sophisticated Role-Based Access Control (RBAC) system.  It started as a spinoff of Bill Katz's Authorization plugin, but has been substantially tested, debugged and enhanced since then.  Current functionality highlights include:
+authorize is a Ruby on Rails plugin providing a sophisticated Role-Based Access Control (RBAC) system.  It started as a spinoff of Bill Katz's 
+Authorization plugin, but has been substantially tested, debugged and enhanced since then.  Current functionality highlights include:
 
- * Polymorphic association of ActiveRecord subject models.
- * Polymorphic association of ActiveRecord trustee models.
- * Flexible identity mappings to support Group-based roles.
- * Syntax to support a single ActiveRecord model being both a subject and a trustee.
+ * Polymorphic association of ActiveRecord models as subjects.
+ * Three-level (global, class, instance) authorizations over subjects.
+ * Trustee identification via a flexible token system, supporting groups, "public" authorizations and proxies.
+ * "Acts" to support a single ActiveRecord model being both a subject and a trustee.
  * Dynamic methods on subjects and trustees support domain-specific syntax: user.is_owner_of(widget)? and widget.is_owned_by?(user)
- * Class-level role support (user.is_moderator_of?(Post)
- * Generic/global-level role support (user.is_administrator?) 
  * Performance-optimized Domain-Specific Language (DSL) for more sophisticated predicates (available in ActionController at controller and action level).
 
 For more information on the theory of RBAC, see http://en.wikipedia.org/wiki/Role-based_access_control, but note that the term "subject" is used where this plugin uses the term "trustee".
@@ -25,6 +24,9 @@ global/generic role.  For example, using the boolean version:
 More complex expressions typically involve requiring a particular role over a particular model instance.  For example:
 
 	permit? "owner of :widget"  
+
+Clean hooks are available for identifying the appropriate authorization tokens for the current request.  No "User" class is assumed, no "current_user"
+method is required.
 
 The authorize plugin extends ActiveRecord with two methods: acts_as_subject and acts_as_trustee.  A given model may invoke
 either or both, depending on requirements.  The follow narrative shows the methods added to models for management of 
@@ -89,3 +91,20 @@ Identity Mixin methods:
           Returns array of trustees having specified role over the subject.
     has_<Role>?
           Boolean conditioned upon at least one trustee having <Role> over the subject.
+          
+----------------
+
+A Note on Authoriztion Tokens
+
+Authorization Tokens are the key to an authorization.  Consequently, they support a security model based on something virtually possessed by the user
+rather than simply an attribute of the user.  How a user accumulates authorization tokens is up to you.  Here are some ideas:
+
+	1. Create a "Public" token and persist it with the application configuration.  In a before_filter, accumulate this token (probably the first one).
+	2. Create a token for each user and persist it in his user model instance.  When he authenticates, accumulate his token.
+	3. Allow a user to affiliate with groups that also have a persisted token.  When membership is ascertained, accumulate the group token.
+	4. Create a shared secret token on and display it to the "owner".  Provide a page where any user can prove he shares the secret by entering 
+	   the token, which can be a simple Authorization.find_by_token(), and accumulate the token.  Note that allowing users to grab tokens like this
+	   can be a security risk if "private" tokens can be guessed.  Resolve the problem by using hashs as tokens.  Shared secret tokens are in fact a
+	   hash of the true shared secret (which can be a user selected phrase, a bubblebabble, etc.) while private tokens are a hash of a random
+	   discarded value.  Then, in theory, private tokens can only be accessed by guessing the discarded random value or by looking up the actual
+	   token on the user model instance.
