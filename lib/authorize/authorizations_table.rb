@@ -11,8 +11,13 @@ module Authorize
       module ClassMethods
         def acts_as_trustee(associate = true)
           if associate
-            has_many :authorizations, :primary_key => 'authorization_token', :foreign_key => 'token', :dependent => :delete_all
-            has_many :permissions, :primary_key => 'authorization_token', :foreign_key => 'token', :class_name => 'Authorization', :dependent => :delete_all
+            # We would like to use :dependent => :delete_all (no sense instantiating the Authorization instance), but it fails to delete the
+            # associated authorizations.  Seems like a bug in respecting the "primary_key" option.
+            # TODO: revert this to :delete_all when the bug is resolved.
+            has_many :permissions, :primary_key => 'authorization_token', :foreign_key => 'token', :class_name => 'Authorization', :dependent => :destroy
+            class_eval do
+              alias :authorizations :permissions 
+            end
           end
           include Authorize::AuthorizationsTable::TrusteeExtensions::InstanceMethods
           include Authorize::Identity::TrusteeExtensions::InstanceMethods   # Provides all kinds of dynamic sugar via method_missing

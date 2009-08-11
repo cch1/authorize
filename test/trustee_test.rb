@@ -53,4 +53,10 @@ class TrusteeTest < ActiveSupport::TestCase
       assert du.authorized?('steward', widgets(:foo))
     end
   end
+
+  test 'should destroy authorization when trustee destroyed' do
+    assert_difference('Authorization.count', -1) do
+      users(:alex).destroy
+    end
+  end
 end

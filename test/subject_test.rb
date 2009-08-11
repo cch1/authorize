@@ -37,4 +37,10 @@ class SubjectTest < ActiveSupport::TestCase
   test 'should restrict to authorized scope when authorized generically' do
     assert_equal 3, Widget.authorized(users(:chris).authorization_token, 'overlord').count
   end
+  
+  test 'should destroy authorization when subject destroyed' do
+    assert_difference('Authorization.count', -1) do
+      widgets(:foo).destroy
+    end
+  end
 end
