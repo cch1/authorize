@@ -27,7 +27,7 @@ class AuthorizationTest < ActiveSupport::TestCase
   end
 
   test 'should have correct conditions with named scopes' do
-    assert_equal 1, Authorization.as(%w(proxy overlord)).with(Fixtures.identify(:chris_authorization_token)).count
+    assert_equal 1, Authorization.as(%w(proxy overlord)).with(Authorize::Token._build(:chris_authorization_token).to_s).count
   end
 
   test 'should have correct subject conditions with scope' do

@@ -1,23 +1,23 @@
 chris_foo:
   role: owner
-  token: <%= Fixtures.identify(:chris_authorization_token) %>
+  token: <%= Authorize::Token._build(:chris_authorization_token) %>
   subject: foo (Widget)
   created_at: <%= 2.days.ago.to_s :db %>
   updated_at: <%= 1.days.ago.to_s :db %>
 pascale_bar:
   role: proxy
-  token: <%= Fixtures.identify(:pascale_authorization_token) %>
+  token: <%= Authorize::Token._build(:pascale_authorization_token) %>
   subject: bar (Widget)
   created_at: <%= 2.days.ago.to_s :db %>
   updated_at: <%= 1.days.ago.to_s :db %>
 overlord:
   role: overlord
-  token: <%= Fixtures.identify(:chris_authorization_token) %>
+  token: <%= Authorize::Token._build(:chris_authorization_token) %>
   created_at: <%= 1.days.ago.to_s :db %>
   updated_at: <%= 1.days.ago.to_s :db %>
 alex_widget:
   role: overlord
-  token: <%= Fixtures.identify(:alex_authorization_token) %>
+  token: <%= Authorize::Token._build(:alex_authorization_token) %>
   subject_type: Widget
   created_at: <%= 1.days.ago.to_s :db %>
   updated_at: <%= 1.days.ago.to_s :db %>  
