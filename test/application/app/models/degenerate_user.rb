@@ -1,5 +1,5 @@
 class ::DegenerateUser
-  include Authorize::AuthorizationsTable, Authorize::AuthorizationsTable::TrusteeExtensions
+  include Authorize::AuthorizationsTable::TrusteeExtensions
   acts_as_trustee(false)
 
   def authorization_token
