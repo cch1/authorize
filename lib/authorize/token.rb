@@ -35,17 +35,18 @@ module Authorize
 
     # Part Two: The reversible key<->mnemonic encoding standard
     def self.key_to_mnemonic(key)
-      i = self.key_to_i(key) 
+      i = self.key_to_i(key.to_s) 
       Rufus::Mnemo::from_integer(i)
     end
 
     # Build a token from a mnemonic string in Rufus::Mnemo format
     def self.build(mnemonic)
-      key = self.mnemonic_to_key(mnemonic)
+      key = self.mnemonic_to_key(mnemonic.to_s)
       _build(key)
     end
     
     def self._build(key)
+      key = key.to_s
       digest = self.digest(key)
       self.new(digest, key)
     end
