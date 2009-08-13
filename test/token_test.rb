@@ -61,4 +61,9 @@ class TokenTest < ActiveSupport::TestCase
     assert token = Authorize::Token.build(mnemonic)
     assert_equal "11e6d3f0fd388ab346a306839ab938aa35256f61a32b0114f5d3ca4b357cb0a0", token.digest
   end
+  
+  test 'should associate' do
+    token = Authorize::Token._build(:chris_authorization_token)
+    assert_equal 2, token.permissions.size
+  end
 end

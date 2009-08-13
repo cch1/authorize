@@ -6,10 +6,13 @@ module Authorize
     SALT = "Replace this value with an application-specific value of your choosing."
     KEY_SIZE = 16
     attr_reader :key, :digest
+    
+    include AuthorizationsTable::TrusteeExtensions
+    acts_as_trustee(false)
 
     # Normalize the key, combine with salt and hash the result
     def self.digest(key)
-      message = SALT + key
+      message = SALT + key.to_s
       Digest::SHA256.hexdigest(message)
     end
 
@@ -72,6 +75,10 @@ module Authorize
         raise("No key available") unless key
         self.class.key_to_mnemonic(key) 
       end
+    end
+
+    def permissions
+      Authorization.with(digest)
     end
 
     def to_s
