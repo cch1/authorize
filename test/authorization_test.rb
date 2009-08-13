@@ -8,6 +8,12 @@ class AuthorizationTest < ActiveSupport::TestCase
     assert a.valid?
   end
 
+  test 'should not validate with missing token' do
+    a = Authorization.new(:token => nil, :role => "liege", :subject_type => 'Widget', :subject_id => widgets(:bar).id)
+    assert !a.valid?
+    assert a.errors.on(:token)
+  end
+
   test 'should not validate with invalid subject_id' do
     a = Authorization.new(:token => "123", :role => "liege", :subject_type => 'Widget', :subject_id => 1)
     assert !a.valid?
