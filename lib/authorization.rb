@@ -11,8 +11,8 @@ class Authorization < ActiveRecord::Base
   validates_presence_of :token
   validates_presence_of :subject, :if => :subject_id
   
-  named_scope :as, lambda {|roles| roles.nil? ? {} : {:conditions => {:role => roles}}}
-  named_scope :with, lambda {|tokens| tokens.nil? ? {} : {:conditions => {:token => tokens}}}
+  named_scope :as, lambda {|roles| {:conditions => {:role => roles}}}
+  named_scope :with, lambda {|tokens| {:conditions => {:token => tokens}}}
   named_scope :for, lambda {|subject|
     subject_conditions = if subject.is_a?(NilClass) then
        {:subject_id => nil, :subject_type => nil}
@@ -42,13 +42,19 @@ class Authorization < ActiveRecord::Base
     {:conditions => [ConditionClause, tokens, tokens, roles]}
   }
 
-  # The tokens and roles paramaters can be scalars or arrays.  The token elements can be AR objects or ids.
-  def self.find_effective(subject = nil, tokens = nil, roles = nil)
-    as(roles).with(tokens).over(subject).all
+  # Find the effective authorizations (including authorizations inherited from global or relevant class authorizations) over a given subject.
+  # A nil subject implies a search for global authorizations.
+  # A nil token argument or a nil role argument ignores the corresponding attribute.
+  # The tokens and roles paramaters can be scalars or arrays.  The token elements can be strings or string-like objects.
+  def self.find_effective(subject, tokens = nil, roles = nil)
+    scope = over(subject)
+    scope = scope.as(roles) if roles
+    scope = scope.with(tokens) if tokens
+    scope.all
   end
   
   def subj
-    return '!Everything!' unless subject_type
+    return nil unless subject_type
     return subject_type.constantize unless subject_id
     return subject || '!Broken Link!'
   end

@@ -78,6 +78,7 @@ class AuthorizationTest < ActiveSupport::TestCase
   end
 
   test 'should find effective global authorizations' do
-    assert_equal 1, Authorization.find_effective().size
+    assert_equal 1, Authorization.over(nil).size
+    assert_equal 1, Authorization.find_effective(nil).size
   end
 end
