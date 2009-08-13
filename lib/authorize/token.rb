@@ -2,7 +2,7 @@ require 'digest'
 require 'rufus/mnemo'
 
 module Authorize
-  class Token
+  class Token < String
     SALT = "Replace this value with an application-specific value of your choosing."
     KEY_SIZE = 16
     attr_reader :key, :digest
@@ -56,18 +56,15 @@ module Authorize
 
     # Construct a shiny new token using a random key.  The size of the random key, measured in bytes, can be specified.
     def self.generate(bytes = KEY_SIZE)
-      self.new.tap {|t| t.generate!(bytes)}
+      key = self.generate_key(bytes)
+      digest = self.digest(key)
+      self.new(digest, key)
     end
 
     def initialize(digest = nil, key = nil)
       @digest = digest
       @key = key
-    end
-
-    def generate!(bytes = KEY_SIZE)
-      raise "Already generated." if digest
-      @key = self.class.generate_key(bytes)
-      @digest = self.class.digest(key)
+      super(@digest)
     end
 
     def mnemonic
@@ -78,12 +75,7 @@ module Authorize
     end
 
     def permissions
-      Authorization.with(digest)
+      Authorization.with(self)
     end
-
-    def to_s
-      digest
-    end
-    alias to_str to_s
   end
 end

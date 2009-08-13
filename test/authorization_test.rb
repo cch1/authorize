@@ -20,7 +20,7 @@ class AuthorizationTest < ActiveSupport::TestCase
     assert_equal users(:chris).authorization_token, a.token
     assert_equal 'owner', a.role
   end
-  
+
   test 'should scope to generic authorizations' do
     assert_equal({:conditions => {:subject_type => nil, :subject_id => nil}}, Authorization.generic.proxy_options)
     assert 1, Authorization.generic.size
@@ -43,7 +43,12 @@ class AuthorizationTest < ActiveSupport::TestCase
   test 'should find effective authorizations with array of tokens' do
     assert_equal 2, Authorization.find_effective(widgets(:bar), [users(:chris).authorization_token, users(:pascale).authorization_token], nil).size
   end
-  
+
+  test 'should find with token object' do
+    token = Authorize::Token._build(:chris_authorization_token)
+    assert_equal 2, Authorization.count(:conditions => {:token => token})
+  end
+
   test 'should restrict to authorized scope' do
     assert_equal 2, Authorization.authorized(users(:chris).authorization_token, nil).count
     assert_equal 1, Authorization.authorized(users(:pascale).authorization_token, nil).count
