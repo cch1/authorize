@@ -1,7 +1,7 @@
 ActiveRecord::Schema.define(:version => 0) do
   create_table :users, :force => true do |t|
     t.string :login, :limit => 80
-    t.text :authorization_token, :limit => 64
+    t.text :authorization_token, :limit => Authorize::Token::SIZE
     t.timestamps
   end
   create_table :degenerate_users, :force => true do |t|

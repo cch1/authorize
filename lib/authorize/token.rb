@@ -3,43 +3,28 @@ require 'rufus/mnemo'
 
 module Authorize
   class Token < String
+    SIZE = 32
     SALT = "Replace this value with an application-specific value of your choosing."
-    KEY_SIZE = 16
+    KEY_BITS = 128
     attr_reader :key, :digest
     
     include AuthorizationsTable::TrusteeExtensions
     acts_as_trustee(false)
 
-    # Normalize the key, combine with salt and hash the result
+    # Combine key with salt and hash the result
     def self.digest(key)
       message = SALT + key.to_s
-      Digest::SHA256.hexdigest(message)
+      Digest::SHA256.hexdigest(message)[0..SIZE]
     end
 
-    def self.generate_key(bytes = KEY_SIZE)
-      ("\0" * (KEY_SIZE - bytes)) + ActiveSupport::SecureRandom.random_bytes(bytes)
-    end
-
-    # Part One: The reversible key<->integer encoding standard
-    def self.i_to_key(i)
-      i.to_s(16).rjust(KEY_SIZE * 2, '0').to_a.pack("H*") # fixnum -> hexstring (zero padded) -> binary string
-    end
-    
-    # Part Two: The reversible key<->integer encoding standard
-    def self.key_to_i(key)
-      key.unpack("H*").first.hex # binary string -> hex string -> fixnum
-    end
-    
     # Part One: The reversible key<->mnemonic encoding standard
     def self.mnemonic_to_key(mnemonic)
-      i = Rufus::Mnemo::to_integer(mnemonic)
-      self.i_to_key(i)      
+      Rufus::Mnemo::to_integer(mnemonic)
     end
 
     # Part Two: The reversible key<->mnemonic encoding standard
     def self.key_to_mnemonic(key)
-      i = self.key_to_i(key.to_s) 
-      Rufus::Mnemo::from_integer(i)
+      Rufus::Mnemo::from_integer(key.to_i)
     end
 
     # Build a token from a mnemonic string in Rufus::Mnemo format
@@ -49,16 +34,15 @@ module Authorize
     end
     
     def self._build(key)
-      key = key.to_s
       digest = self.digest(key)
       self.new(digest, key)
     end
 
-    # Construct a shiny new token using a random key.  The size of the random key, measured in bytes, can be specified.
-    def self.generate(bytes = KEY_SIZE)
-      key = self.generate_key(bytes)
-      digest = self.digest(key)
-      self.new(digest, key)
+    # Construct a shiny new token using a random key.  The size of the random key, measured in bits, can be specified.
+    # Generated tokens, having integer keys, can be represented by a mnemonic device
+    def self.generate(bits = KEY_BITS)
+      key = ActiveSupport::SecureRandom.random_number(2**bits - 1)
+      self._build(key)
     end
 
     def initialize(digest = nil, key = nil)
@@ -70,6 +54,7 @@ module Authorize
     def mnemonic
       @mnemonic ||= begin
         raise("No key available") unless key
+        raise("Non-integer key") unless key.kind_of?(Integer)
         self.class.key_to_mnemonic(key) 
       end
     end
