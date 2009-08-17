@@ -14,7 +14,7 @@ module Authorize
     # Combine key with salt and hash the result
     def self.digest(key)
       message = SALT + key.to_s
-      Digest::SHA256.hexdigest(message)[0..SIZE]
+      Digest::SHA256.hexdigest(message)[0, SIZE]
     end
 
     # Part One: The reversible key<->mnemonic encoding standard
