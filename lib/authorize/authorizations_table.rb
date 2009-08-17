@@ -9,12 +9,12 @@ module Authorize
       end
 
       module ClassMethods
-        def acts_as_trustee(associate = true)
-          if associate
+        def acts_as_trustee(key = :authorization_token)
+          if key
             # We would like to use :dependent => :delete_all (no sense instantiating the Authorization instance), but it fails to delete the
             # associated authorizations.  Seems like a bug in respecting the "primary_key" option.
             # TODO: revert this to :delete_all when the bug is resolved.
-            has_many :permissions, :primary_key => 'authorization_token', :foreign_key => 'token', :class_name => 'Authorization', :dependent => :destroy
+            has_many :permissions, :primary_key => key.to_s, :foreign_key => 'token', :class_name => 'Authorization', :dependent => :destroy
             class_eval do
               alias :authorizations :permissions 
             end
