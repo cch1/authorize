@@ -12,7 +12,15 @@ class ControllerClassTest < ActionController::TestCase
     end
   end
 
-  test 'should perform action' do
+  test 'should perform action because of filter skipping' do
+    @controller.authorization_tokens << users(:pascale).authorization_token
+    assert_nothing_raised do
+      get :show
+      assert_response :success
+    end
+  end
+
+  test 'should perform action because of authorization' do
     @controller.authorization_tokens << users(:chris).authorization_token
     assert_nothing_raised do
       get :index

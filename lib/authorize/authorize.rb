@@ -13,7 +13,8 @@ module Authorize
     module ControllerClassMethods      
       # Allow action-level authorization check with an appended before_filter.
       def permit(authorization_expression, options = {})
-        append_before_filter(options.slice!(:only, :except)) do |controller|
+        auth_options = options.slice!(:only, :except)
+        append_before_filter(options) do |controller|
           controller.permit(authorization_expression, options)
         end      
       end
