@@ -8,7 +8,7 @@ class TokenTest < ActiveSupport::TestCase
       bits = rand(256) + 1
       token = Authorize::Token.generate(bits)
       syllables = (Math.log(2**bits)/Math.log(70)).ceil
-      assert token.mnemonic.size < syllables * 3, "#{bits} : #{syllables} (#{token.mnemonic})"
+      assert_operator token.mnemonic.size, :<=, syllables * 3, "#{bits} : #{syllables} (#{token.mnemonic})"
     end
   end
 
