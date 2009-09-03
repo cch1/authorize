@@ -59,4 +59,9 @@ class TrusteeTest < ActiveSupport::TestCase
       users(:alex).destroy
     end
   end
+
+  test 'should enable trustee identification from created authorization' do
+    a = users(:chris).authorize('master', Widget)
+    assert_equal users(:chris), a.trustee
+  end
 end

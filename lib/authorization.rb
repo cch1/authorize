@@ -52,6 +52,10 @@ class Authorization < ActiveRecord::Base
     scope = scope.with(tokens) if tokens
     scope.all
   end
+
+  def trustee
+    trustee_type.constantize.find_by_authorization_token(token)
+  end
   
   def subj
     return nil unless subject_type

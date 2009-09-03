@@ -4,17 +4,26 @@ module Authorize
   module AuthorizationsTable
 
     module TrusteeExtensions
-      def self.included( recipient )
-        recipient.extend( ClassMethods )
+      def self.included(recipient)
+        recipient.extend(ClassMethods)
       end
 
       module ClassMethods
         def acts_as_trustee(key = :authorization_token)
           if key
-            # We would like to use :dependent => :delete_all (no sense instantiating the Authorization instance), but it fails to delete the
-            # associated authorizations.  Seems like a bug in respecting the "primary_key" option.
-            # TODO: revert this to :delete_all when the bug is resolved.
-            has_many :permissions, :primary_key => key.to_s, :foreign_key => 'token', :class_name => 'Authorization', :dependent => :destroy
+            unless respond_to?(:find_by_authorization_token)
+              define_method(:find_by_authorization_token) do |token|
+                finder = "find_by_#{key}".to_sym
+                send(finder, token)
+              end
+            end
+            define_method(:permissions) do
+              token = send(key)
+              Authorization.with(token).scoped(:conditions => {:trustee_type => self.class.base_class.name})
+            end
+            before_destroy do |trustee|
+              trustee.permissions.delete_all
+            end
             class_eval do
               alias :authorizations :permissions 
             end
@@ -43,7 +52,7 @@ module Authorize
         end
       end 
     end
-        
+
     module SubjectExtensions
       ConditionClause = "EXISTS (SELECT 1 FROM authorizations a WHERE (a.subject_type IS NULL OR (a.subject_type = ? AND (a.subject_id = %s.%s OR a.subject_id IS NULL))) AND a.token IN (?))"
       # The above statement does not optimize well on MySQL 5.0, probably due to the presence of NULLs and ORs.  Forcing the use of an appropriate index solves the problem. 
@@ -88,7 +97,7 @@ module Authorize
         def subjections
           Authorization.for(self)
         end
-      end     
+      end
 
       module InstanceMethods
         def subjected?(role, trustee)

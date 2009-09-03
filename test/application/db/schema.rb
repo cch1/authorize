@@ -17,6 +17,7 @@ ActiveRecord::Schema.define(:version => 0) do
       t.integer :subject_id
       t.string :subject_type, :limit => 25
       t.integer :parent_id
+      t.string :trustee_type, :limit => 25
       t.timestamps
   end
   add_index :authorizations, [:role, :token, :subject_id, :subject_type], :unique => true, :name => "rts"

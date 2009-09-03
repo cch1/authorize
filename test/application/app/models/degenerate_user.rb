@@ -9,4 +9,9 @@ class ::DegenerateUser
   def permissions # must return a named scope or an association or a class
     Authorization.with(authorization_token)
   end
+
+  # Should return the trustee possessing the given authorization token.
+  def find_by_authorization_token(token)
+    ObjectSpace._id2ref(token)
+  end
 end  

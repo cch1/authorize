@@ -2,22 +2,26 @@ chris_foo:
   role: owner
   token: <%= Authorize::Token._build(:chris_authorization_token) %>
   subject: foo (Widget)
+  trustee_type: User
   created_at: <%= 2.days.ago.to_s :db %>
   updated_at: <%= 1.days.ago.to_s :db %>
 pascale_bar:
   role: proxy
   token: <%= Authorize::Token._build(:pascale_authorization_token) %>
   subject: bar (Widget)
+  trustee_type: User
   created_at: <%= 2.days.ago.to_s :db %>
   updated_at: <%= 1.days.ago.to_s :db %>
 overlord:
   role: overlord
   token: <%= Authorize::Token._build(:chris_authorization_token) %>
+  trustee_type: User
   created_at: <%= 1.days.ago.to_s :db %>
   updated_at: <%= 1.days.ago.to_s :db %>
 alex_widget:
   role: overlord
   token: <%= Authorize::Token._build(:alex_authorization_token) %>
   subject_type: Widget
+  trustee_type: User
   created_at: <%= 1.days.ago.to_s :db %>
   updated_at: <%= 1.days.ago.to_s :db %>  

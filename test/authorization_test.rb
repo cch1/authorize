@@ -26,6 +26,10 @@ class AuthorizationTest < ActiveSupport::TestCase
     assert_equal users(:chris).authorization_token, a.token
     assert_equal 'owner', a.role
   end
+  
+  test 'should identify trustee' do
+    assert_equal users(:chris), authorizations(:chris_foo).trustee
+  end
 
   test 'should scope to generic authorizations' do
     assert_equal({:conditions => {:subject_type => nil, :subject_id => nil}}, Authorization.generic.proxy_options)
