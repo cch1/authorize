@@ -15,7 +15,7 @@ module Authorize
       def permit(authorization_expression, options = {})
         auth_options = options.slice!(:only, :except)
         append_before_filter(options) do |controller|
-          controller.permit(authorization_expression, options)
+          controller.permit(authorization_expression, auth_options)
         end      
       end
     end
