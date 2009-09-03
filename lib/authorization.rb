@@ -31,9 +31,9 @@ class Authorization < ActiveRecord::Base
     subject_conditions = if subject.is_a?(NilClass) then
        {:subject_id => nil, :subject_type => nil}
     elsif subject.is_a?(Class) then
-      ["subject_type IS NULL OR (subject_type = ? AND subject_id IS NULL)", subject.to_s]
+      ["subject_type IS NULL OR (subject_type = ? AND subject_id IS NULL)", subject.base_class.name]
     else
-      ["subject_type IS NULL OR (subject_type = ? AND (subject_id = ? OR subject_id IS NULL))", subject.class.to_s, subject]
+      ["subject_type IS NULL OR (subject_type = ? AND (subject_id = ? OR subject_id IS NULL))", subject.class.base_class.name, subject.quoted_id]
     end
     {:conditions => subject_conditions}
   }
