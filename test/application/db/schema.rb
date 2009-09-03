@@ -13,7 +13,7 @@ ActiveRecord::Schema.define(:version => 0) do
   end
   create_table :authorizations, :force => true do |t|
       t.string :role, :limit => 20
-      t.string :token
+      t.string :token, :limit => Authorize::Token::SIZE
       t.integer :subject_id
       t.string :subject_type, :limit => 25
       t.integer :parent_id
