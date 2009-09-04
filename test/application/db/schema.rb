@@ -1,7 +1,7 @@
 ActiveRecord::Schema.define(:version => 0) do
   create_table :users, :force => true do |t|
     t.string :login, :limit => 80
-    t.string :authorization_token, :limit => Authorize::Token::SIZE
+    t.string :authorization_token, :limit => Token.size
     t.timestamps
   end
   create_table :degenerate_users, :force => true do |t|
@@ -13,7 +13,7 @@ ActiveRecord::Schema.define(:version => 0) do
   end
   create_table :authorizations, :force => true do |t|
       t.string :role, :limit => 20
-      t.string :token, :limit => Authorize::Token::SIZE
+      t.string :token, :limit => Token.size
       t.integer :subject_id
       t.string :subject_type, :limit => 25
       t.integer :parent_id

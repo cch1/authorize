@@ -37,7 +37,7 @@ class AuthorizationTest < ActiveSupport::TestCase
   end
 
   test 'should have correct conditions with named scopes' do
-    assert_equal 1, Authorization.as(%w(proxy overlord)).with(Authorize::Token._build(:chris_authorization_token).to_s).count
+    assert_equal 1, Authorization.as(%w(proxy overlord)).with(users(:chris).authorization_token).count
   end
 
   test 'should have correct subject conditions with scope' do
@@ -55,8 +55,7 @@ class AuthorizationTest < ActiveSupport::TestCase
   end
 
   test 'should find with token object' do
-    token = Authorize::Token._build(:chris_authorization_token)
-    assert_equal 2, Authorization.count(:conditions => {:token => token})
+    assert_equal 2, Authorization.count(:conditions => {:token => users(:chris).authorization_token})
   end
 
   test 'should restrict to authorized scope' do
