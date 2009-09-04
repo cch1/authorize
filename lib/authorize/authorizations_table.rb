@@ -54,10 +54,7 @@ module Authorize
     end
 
     module SubjectExtensions
-      ConditionClause = "EXISTS (SELECT 1 FROM authorizations a WHERE (a.subject_type IS NULL OR (a.subject_type = ? AND (a.subject_id = %s.%s OR a.subject_id IS NULL))) AND a.token IN (?))"
-      # The above statement does not optimize well on MySQL 5.0, probably due to the presence of NULLs and ORs.  Forcing the use of an appropriate index solves the problem. 
-      # Another (temporary) solution was to delete the other indices that caused MySQL to poorly optimize queries with this condition.  When other indices are required, consider the following query: 
-#      ConditionClause = "EXISTS (SELECT true FROM authorizations a USE INDEX (subject_trustee_role) WHERE (a.subject_type IS NULL OR (a.subject_type = '%s' AND (a.subject_id = %s.%s OR a.subject_id IS NULL))) AND a.trustee_id IN (%s) %s)"
+      ConditionClause = "a.subject_type IS NULL OR (a.subject_type = %s AND (a.subject_id = %s.%s OR a.subject_id IS NULL))"
 
       def self.included(recipient)
         recipient.extend(ClassMethods)
@@ -69,14 +66,12 @@ module Authorize
           include Authorize::AuthorizationsTable::SubjectExtensions::InstanceMethods
           include Authorize::Identity::SubjectExtensions::InstanceMethods   # Provides all kinds of dynamic sugar via method_missing
           extend Authorize::AuthorizationsTable::SubjectExtensions::SingletonMethods
+          subject_condition_clause = ConditionClause % [connection.quote(base_class.name), table_name, primary_key]
           named_scope :authorized, lambda {|tokens, roles|
-            tokens = [tokens].flatten
-            conditions = [ConditionClause % [self.table_name, self.primary_key], self.to_s, tokens]
-            if roles
-              conditions[0].insert(-2, " AND a.role IN (?)")
-              conditions << [roles].flatten.map(&:to_s)
-            end
-            {:conditions => conditions}
+            scope = Authorization.scoped(:conditions => subject_condition_clause).with(tokens)
+            scope = scope.as(roles) if roles
+            c = scope.construct_finder_sql({:select => 1, :from => 'authorizations a'}).gsub('"authorizations"', 'a')
+            {:conditions => "EXISTS (%s)" % c}
           }
         end
       end

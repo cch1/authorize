@@ -13,6 +13,7 @@ class Authorization < ActiveRecord::Base
   
   named_scope :as, lambda {|roles| {:conditions => {:role => roles}}}
   named_scope :with, lambda {|tokens| {:conditions => {:token => tokens}}}
+  # Returns the explicit authorizations over a subject.
   named_scope :for, lambda {|subject|
     subject_conditions = if subject.is_a?(NilClass) then
        {:subject_id => nil, :subject_type => nil}
@@ -31,9 +32,15 @@ class Authorization < ActiveRecord::Base
     subject_conditions = if subject.is_a?(NilClass) then
        {:subject_id => nil, :subject_type => nil}
     elsif subject.is_a?(Class) then
-      ["subject_type IS NULL OR (subject_type = ? AND subject_id IS NULL)", subject.base_class.name]
+      c1 = sanitize_sql_hash_for_conditions(:subject_type => nil)
+      c2 = sanitize_sql_hash_for_conditions(:subject_type => subject.base_class.name, :subject_id => nil)
+      "#{c1} OR (#{c2})"
     else
-      ["subject_type IS NULL OR (subject_type = ? AND (subject_id = ? OR subject_id IS NULL))", subject.class.base_class.name, subject.quoted_id]
+      c1 = sanitize_sql_hash_for_conditions(:subject_type => nil)
+      c2 = sanitize_sql_hash_for_conditions(:subject_type => subject.class.base_class.name)
+      c3 = sanitize_sql_hash_for_conditions(:subject_id => subject.quoted_id)
+      c4 = sanitize_sql_hash_for_conditions(:subject_id => nil)
+      "#{c1} OR (#{c2} AND (#{c3} OR #{c4}))"
     end
     {:conditions => subject_conditions}
   }
