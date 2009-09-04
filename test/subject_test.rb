@@ -31,7 +31,8 @@ class SubjectTest < ActiveSupport::TestCase
   test 'should restrict to authorized scope' do
     assert_equal 1, Widget.authorized(users(:pascale).authorization_token, nil).count
     assert_equal 3, Widget.authorized(users(:chris).authorization_token, nil).count
-    assert_equal 1, Widget.authorized(users(:chris).authorization_token, :owner).count
+    assert_equal 3, Widget.authorized([users(:chris), users(:pascale)].map(&:authorization_token), nil).count
+    assert_equal 1, Widget.authorized(users(:chris).authorization_token, 'owner').count
   end
 
   test 'should restrict to authorized scope when authorized generically' do
