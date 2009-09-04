@@ -1,4 +1,5 @@
 require 'rufus/mnemo'
+require 'digest'
 
 class Token
   cattr_accessor :size, :salt, :key_bits
