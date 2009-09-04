@@ -50,7 +50,7 @@ class Authorization < ActiveRecord::Base
     scope = over(subject)
     scope = scope.as(roles) if roles
     scope = scope.with(tokens) if tokens
-    scope.all
+    scope
   end
 
   def trustee
