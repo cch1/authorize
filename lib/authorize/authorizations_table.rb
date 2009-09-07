@@ -54,8 +54,6 @@ module Authorize
     end
 
     module SubjectExtensions
-      ConditionClause = "a.subject_type IS NULL OR (a.subject_type = %s AND (a.subject_id = %s.%s OR a.subject_id IS NULL))"
-
       def self.included(recipient)
         recipient.extend(ClassMethods)
       end
@@ -66,11 +64,17 @@ module Authorize
           include Authorize::AuthorizationsTable::SubjectExtensions::InstanceMethods
           include Authorize::Identity::SubjectExtensions::InstanceMethods   # Provides all kinds of dynamic sugar via method_missing
           extend Authorize::AuthorizationsTable::SubjectExtensions::SingletonMethods
-          subject_condition_clause = ConditionClause % [connection.quote(base_class.name), table_name, primary_key]
+          reflection = reflections[:subjections]
+          c1 = Authorization.sanitize_sql_hash_for_conditions(:subject_type => nil)
+          c2 = Authorization.sanitize_sql_hash_for_conditions(:subject_type => base_class.name)
+          c3l = "%s.%s" % [reflection.quoted_table_name, connection.quote_column_name(reflection.primary_key_name)]
+          c3r = "%s.%s" % [connection.quote_table_name(table_name), connection.quote_column_name(primary_key)]
+          c4 = Authorization.sanitize_sql_hash_for_conditions(:subject_id => nil)
+          subject_condition_clause = "#{c1} OR (#{c2} AND (#{c3l} = #{c3r} OR #{c4}))"
           named_scope :authorized, lambda {|tokens, roles|
             scope = Authorization.scoped(:conditions => subject_condition_clause).with(tokens)
             scope = scope.as(roles) if roles
-            c = scope.construct_finder_sql({:select => 1, :from => 'authorizations a'}).gsub('"authorizations"', 'a')
+            c = scope.construct_finder_sql({:select => 1, :from => "#{reflection.quoted_table_name} a"}).gsub(/#{reflection.quoted_table_name}\./, 'a.')
             {:conditions => "EXISTS (%s)" % c}
           }
         end
