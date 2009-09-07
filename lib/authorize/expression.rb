@@ -45,7 +45,7 @@ module Authorize
     # Get authorization tokens appropriate for this request as accumulated in the #authorization_tokens array.
     def get_tokens
       begin
-        controller.authorization_tokens + [options[:token]].flatten.compact
+        controller.authorization_tokens.to_a + [options[:token]].flatten.compact
       rescue => e
         raise CannotObtainTokens, "Cannot determine authorization tokens: #{e}"
       end
