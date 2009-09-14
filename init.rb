@@ -1,4 +1,3 @@
-require 'authorize/authorize'
 require 'authorize/exceptions'
 
 ActionController::Base.send(:include, Authorize::Base)

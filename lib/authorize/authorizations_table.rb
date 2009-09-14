@@ -1,5 +1,3 @@
-require File.dirname(__FILE__) + '/identity'
-
 module Authorize
   module AuthorizationsTable
 
