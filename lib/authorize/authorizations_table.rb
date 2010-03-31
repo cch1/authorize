@@ -9,12 +9,6 @@ module Authorize
       module ClassMethods
         def acts_as_trustee(key = :authorization_token)
           if key
-            unless respond_to?(:find_by_authorization_token)
-              define_method(:find_by_authorization_token) do |token|
-                finder = "find_by_#{key}".to_sym
-                send(finder, token)
-              end
-            end
             define_method(:permissions) do
               token = send(key)
               Authorization.with(token).scoped(:conditions => {:trustee_type => self.class.base_class.name})
