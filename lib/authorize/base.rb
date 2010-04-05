@@ -9,20 +9,27 @@ module Authorize
         include ControllerInstanceMethods
       end
     end
-    
-    module ControllerClassMethods      
+
+    module ControllerClassMethods
       # Allow action-level authorization check with an appended before_filter.
       def permit(authorization_expression, options = {})
         auth_options = options.slice!(:only, :except)
         append_before_filter(options) do |controller|
           controller.permit(authorization_expression, auth_options)
-        end      
+        end
       end
     end
-    
+
     module ControllerInstanceMethods
       # Simple predicate for authorization.
-      def permit?(authorization_expression, options = {})
+      def permit?(authorization_expression, opts = {})
+        options = opts.dup
+        begin
+          t = options.delete(:token)
+          options[:tokens] ||= t && [t] || authorization_tokens.to_a
+        rescue => e
+          raise CannotObtainTokens, "Cannot determine authorization tokens: #{e}"
+        end
         Expression.new(authorization_expression, self, options).eval
       end
 
@@ -34,11 +41,11 @@ module Authorize
         callback = options.delete(:callback)
         if permit?(authorization_expression, options)
           yield if block_given?
-        else 
+        else
           handle_authorization_failure if callback
         end
       end
-            
+
       private
       # Handle authorization failure within permit.  Override this callback in your ApplicationController
       # for custom behavior.  This method typically returns the value for the around_filter

@@ -2,9 +2,9 @@ require File.expand_path(File.dirname(__FILE__) + "/application/test/test_helper
 
 class ControllerTest < ActionController::TestCase
   fixtures :users, :widgets, :authorizations
-  
+
   tests WidgetsController
-  
+
   test 'should fail without subject' do
     assert_raises Authorize::CannotObtainModelObject do
       @controller.permit?('owner of w', {:token => users(:chris)})
@@ -59,7 +59,7 @@ class ControllerTest < ActionController::TestCase
       @controller.permit('proxy of w', {:token => users(:chris).authorization_token, :w => widgets(:foo)}) {}
     end
   end
-  
+
   test 'should find authorizations without identities method' do
     du = DegenerateUser.new
     du.authorize('steward', widgets(:foo))

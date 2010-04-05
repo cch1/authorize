@@ -38,9 +38,9 @@ module Authorize
     # We cache the authorized roles to optimize the common pattern of "role1 of widget or role2 of widget or role3 of widget".
     def process_term(role, model_name = nil)
       subject = model_name.nil? ? nil : get_model(model_name)
-      Authorization.logger.debug("***Checking for authorization of #{get_tokens.to_a.join(', ')} as #{role} over #{(subject || '!Everything!').to_s}")
+      Authorization.logger.debug("***Checking for authorization of #{options[:tokens].join(', ')} as #{role} over #{(subject || '!Everything!').to_s}")
       @authorized_roles ||= {}
-      @authorized_roles[subject] ||= Authorization.find_effective(subject, get_tokens).map(&:role)
+      @authorized_roles[subject] ||= Authorization.find_effective(subject, options[:tokens]).map(&:role)
       @authorized_roles[subject].include?(role)
     end
   end
