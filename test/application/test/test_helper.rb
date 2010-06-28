@@ -10,9 +10,9 @@ load(File.dirname(__FILE__) + "/../db/schema.rb")
 # ActiveRecord::Migrator.migrate("#{Rails.root}/db/migrate")
 
 # Set Test::Unit options for optimal performance/fidelity.
-class Test::Unit::TestCase
-#  self.use_transactional_fixtures = true
-#  self.use_instantiated_fixtures  = false
+class ActiveSupport::TestCase
+  self.use_transactional_fixtures = true
+  self.use_instantiated_fixtures  = false
   
   def self.uses_mocha(description)
     require 'mocha'

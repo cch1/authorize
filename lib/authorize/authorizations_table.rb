@@ -17,7 +17,7 @@ module Authorize
               trustee.permissions.delete_all
             end
             class_eval do
-              alias :authorizations :permissions 
+              alias :authorizations :permissions
             end
           end
           include Authorize::AuthorizationsTable::TrusteeExtensions::InstanceMethods
@@ -42,7 +42,7 @@ module Authorize
         def unauthorize(role, subject = nil)
           permissions.as(role).for(subject).delete_all
         end
-      end 
+      end
     end
 
     module SubjectExtensions
@@ -57,17 +57,15 @@ module Authorize
           include Authorize::Identity::SubjectExtensions::InstanceMethods   # Provides all kinds of dynamic sugar via method_missing
           extend Authorize::AuthorizationsTable::SubjectExtensions::SingletonMethods
           reflection = reflections[:subjections]
-          c1 = Authorization.sanitize_sql_hash_for_conditions(:subject_type => nil)
-          c2 = Authorization.sanitize_sql_hash_for_conditions(:subject_type => base_class.name)
-          c3l = "%s.%s" % [reflection.quoted_table_name, connection.quote_column_name(reflection.primary_key_name)]
-          c3r = "%s.%s" % [connection.quote_table_name(table_name), connection.quote_column_name(primary_key)]
-          c4 = Authorization.sanitize_sql_hash_for_conditions(:subject_id => nil)
-          subject_condition_clause = "#{c1} OR (#{c2} AND (#{c3l} = #{c3r} OR #{c4}))"
+          # See README file for a discussion of the performance of this named scope
+          auth_fk = "#{reflection.quoted_table_name}.#{connection.quote_column_name(reflection.primary_key_name)}"
+          subject_pk = "#{connection.quote_table_name(table_name)}.#{connection.quote_column_name(primary_key)}"
           named_scope :authorized, lambda {|tokens, roles|
-            scope = Authorization.scoped(:conditions => subject_condition_clause).with(tokens)
-            scope = scope.as(roles) if roles
-            c = scope.construct_finder_sql({:select => 1, :from => "#{reflection.quoted_table_name} a"}).gsub(/#{reflection.quoted_table_name}\./, 'a.')
-            {:conditions => "EXISTS (%s)" % c}
+            scope = Authorization.with(tokens).as(roles)
+            sq0 = scope.construct_finder_sql({:select => 1, :conditions => {:subject_id => nil, :subject_type => nil}})
+            sq1 = scope.construct_finder_sql({:select => 1, :conditions => {:subject_type => base_class.name, :subject_id => nil}})
+            sq2 = scope.scoped(:conditions => "#{auth_fk} = #{subject_pk}").construct_finder_sql({:select => 1, :conditions => {:subject_type => base_class.name}})
+            {:conditions => "EXISTS (#{sq0} UNION #{sq1} UNION #{sq2})"}
           }
         end
       end
@@ -102,7 +100,7 @@ module Authorize
         def unsubject(role, trustee)
           trustee.unauthorize(role, self)
         end
-      end    
+      end
     end
   end
 end

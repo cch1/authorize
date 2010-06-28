@@ -11,7 +11,7 @@ class Authorization < ActiveRecord::Base
   validates_presence_of :token
   validates_presence_of :subject, :if => :subject_id
   
-  named_scope :as, lambda {|roles| {:conditions => {:role => roles}}}
+  named_scope :as, lambda {|roles| roles ? {:conditions => {:role => roles}} : {}}
   named_scope :with, lambda {|tokens| {:conditions => {:token => tokens}}}
   # Returns the explicit authorizations over a subject.
   named_scope :for, lambda {|subject|

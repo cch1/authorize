@@ -108,3 +108,88 @@ rather than simply an attribute of the user.  How a user accumulates authorizati
 	   hash of the true shared secret (which can be a user selected phrase, a bubblebabble, etc.) while private tokens are a hash of a random
 	   discarded value.  Then, in theory, private tokens can only be accessed by guessing the discarded random value or by looking up the actual
 	   token on the user model instance.
+
+----------------
+
+A Note on Performance
+
+Performance of the <Subject Class>.authorized named scope is critical to effective use of this plugin.  However, it is difficult to optimize across multiple
+database systems for multiple use cases.  Empirically, it seems to be best to use a UNION of the three cases that can yield an authorization: global, class-
+based and instance based.  Alternatives using moderately complex nested or expanded OR clauses fail to optimize correctly on MySQL 5.0 and degrade terribly 
+with substantial authorization and subject volume.  Not surprisingly, COALESCE also fails to optimize nicely.  A JOIN-based solution was considered, but the
+semantics of a JOIN are such that duplicate subject records are returned.  The duplicates could be eliminated with :group and :having options, but at the cost
+of transparency of the #authorized named scope.
+
+Indexing of the authorization table is very important.  See the test application's schema for an reasonable set of indices.
+
+Code examples of alternatives:
+
+          # Baseline with nested booleans
+          c1 = Authorization.sanitize_sql_hash_for_conditions(:subject_type => nil)
+          c2 = Authorization.sanitize_sql_hash_for_conditions(:subject_type => base_class.name)
+          c3l = "%s.%s" % [reflection.quoted_table_name, connection.quote_column_name(reflection.primary_key_name)]
+          c3r = "%s.%s" % [connection.quote_table_name(table_name), connection.quote_column_name(primary_key)]
+          c4 = Authorization.sanitize_sql_hash_for_conditions(:subject_id => nil)
+          subject_condition_clause = "#{c1} OR (#{c2} AND (#{c3l} = #{c3r} OR #{c4}))"
+          named_scope :a0, lambda {|tokens, roles|
+            scope = Authorization.scoped(:conditions => subject_condition_clause).with(tokens).as(roles)
+            c = scope.construct_finder_sql({:select => 1, :from => "#{reflection.quoted_table_name} a"}).gsub(/#{reflection.quoted_table_name}\./, 'a.')
+            {:conditions => "EXISTS (%s)" % c}
+          }
+
+          # Baseline with booleans expanded into three ORs
+          c1 = Authorization.sanitize_sql_hash_for_conditions(:subject_type => nil)
+          c2 = Authorization.sanitize_sql_hash_for_conditions(:subject_type => base_class.name)
+          c3l = "%s.%s" % [reflection.quoted_table_name, connection.quote_column_name(reflection.primary_key_name)]
+          c3r = "%s.%s" % [connection.quote_table_name(table_name), connection.quote_column_name(primary_key)]
+          c4 = Authorization.sanitize_sql_hash_for_conditions(:subject_id => nil)
+          subject_condition_clause = "#{c1} OR (#{c2} AND #{c3l} = #{c3r}) OR (#{c1} AND #{c4})"
+          named_scope :a1, lambda {|tokens, roles|
+            scope = Authorization.scoped(:conditions => subject_condition_clause).with(tokens).as(roles)
+            c = scope.construct_finder_sql({:select => 1, :from => "#{reflection.quoted_table_name} a"}).gsub(/#{reflection.quoted_table_name}\./, 'a.')
+            {:conditions => "EXISTS (%s)" % c}
+          }
+
+          # COALESCE replacing OR (and a subtle but harmless semantic shift)
+          auth_fk = "#{reflection.quoted_table_name}.#{connection.quote_column_name(reflection.primary_key_name)}"
+          subject_pk = "#{connection.quote_table_name(table_name)}.#{connection.quote_column_name(primary_key)}"
+          auth_fk_type = "#{reflection.quoted_table_name}.#{connection.quote_column_name(Authorization.reflections[:subject].options[:foreign_type])}"
+          subject_condition_clause = "%s = COALESCE(#{auth_fk_type}, %s) AND #{subject_pk} = COALESCE(#{auth_fk}, #{subject_pk})" % ([connection.quote(base_class.name)] * 2)
+          named_scope :a2, lambda {|tokens, roles|
+            scope = Authorization.scoped(:conditions => subject_condition_clause).with(tokens).as(roles)
+            c = scope.construct_finder_sql({:select => 1, :from => "#{reflection.quoted_table_name} a"}).gsub(/#{reflection.quoted_table_name}\./, 'a.')
+            {:conditions => "EXISTS (%s)" % c}
+          }
+
+          # Correlated subquery with COALESCE
+          auth_fk = "#{reflection.quoted_table_name}.#{connection.quote_column_name(reflection.primary_key_name)}"
+          subject_pk = "#{connection.quote_table_name(table_name)}.#{connection.quote_column_name(primary_key)}"
+          auth_fk_type = "#{reflection.quoted_table_name}.#{connection.quote_column_name(Authorization.reflections[:subject].options[:foreign_type])}"
+          subject_condition_clause = "%s = COALESCE(#{auth_fk_type}, %s)" % ([connection.quote(base_class.name)] * 2)
+          select_clause = "COALESCE(#{auth_fk}, #{subject_pk})"
+          named_scope :a3, lambda {|tokens, roles|
+            scope = Authorization.scoped(:conditions => subject_condition_clause).with(tokens).as(roles)
+            c = scope.construct_finder_sql({:select => select_clause})
+            {:conditions => "#{subject_pk} IN (#{c})"}
+          }
+
+          # Three-way union - nice performance but UGLY query
+          auth_fk = "#{reflection.quoted_table_name}.#{connection.quote_column_name(reflection.primary_key_name)}"
+          subject_pk = "#{connection.quote_table_name(table_name)}.#{connection.quote_column_name(primary_key)}"
+          named_scope :a4, lambda {|tokens, roles|
+            scope = Authorization.with(tokens).as(roles)
+            sq0 = scope.construct_finder_sql({:select => true, :conditions => {:subject_id => nil, :subject_type => nil}})
+            sq1 = scope.construct_finder_sql({:select => true, :conditions => {:subject_type => base_class.name, :subject_id => nil}})
+            sq2 = scope.scoped(:conditions => "#{auth_fk} = #{subject_pk}").construct_finder_sql({:select => true, :conditions => {:subject_type => base_class.name}})
+            {:conditions => "EXISTS (#{sq0} UNION #{sq1} UNION #{sq2})"}
+          }
+
+          # Join - possible to get nice performance, but semantics collapse
+          auth_fk = "#{reflection.quoted_table_name}.#{connection.quote_column_name(reflection.primary_key_name)}"
+          subject_pk = "#{connection.quote_table_name(table_name)}.#{connection.quote_column_name(primary_key)}"
+          auth_fk_type = "#{reflection.quoted_table_name}.#{connection.quote_column_name(Authorization.reflections[:subject].options[:foreign_type])}"
+          subject_condition_clause = "%s = COALESCE(#{auth_fk_type}, %s) AND #{subject_pk} = COALESCE(#{auth_fk}, #{subject_pk})" % ([connection.quote(base_class.name)] * 2)
+          named_scope :a9, lambda {|tokens, roles|
+            ascope = Authorization.with(tokens).as(roles).current_scoped_methods[:find][:conditions]
+            {:joins => "JOIN authorizations ON #{subject_condition_clause}", :conditions => {:authorizations => ascope}}
+          }
