@@ -1,0 +1,23 @@
+a_read_foo:
+  mask: <%= Authorize::Permission::Mask[:read].to_i %>
+  role_id: a
+  _resource: foo (Widget)
+a_list_bar:
+  mask: <%= Authorize::Permission::Mask[:list].to_i %>
+  role_id: a
+  _resource: bar (Widget)
+b_overlord:
+  mask: <%= Authorize::Permission::Mask[:all].to_i %>
+  role_id: b
+c_all_widgets:
+  mask: <%= Authorize::Permission::Mask[:all].to_i %>
+  role_id: c
+  resource_type: Widget
+d_update_bar:
+  mask: <%= Authorize::Permission::Mask[:list, :read, :update].to_i %>
+  role_id: d
+  _resource: bar (Widget)
+e_delete_bar:
+  mask: <%= Authorize::Permission::Mask[:delete].to_i %>
+  role_id: e
+  _resource: bar (Widget)

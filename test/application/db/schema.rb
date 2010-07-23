@@ -23,4 +23,11 @@ ActiveRecord::Schema.define(:version => 0) do
   add_index :authorizations, [:role, :token, :subject_id, :subject_type], :unique => true, :name => "role_token_subject"
   add_index :authorizations, [:token, :subject_id, :subject_type, :role], :unique => true, :name => "token_subject_role"
   add_index :authorizations, [:subject_id, :subject_type, :token, :role], :unique => true, :name => "subject_token_role"
+
+  create_table :authorize_permissions, :force => true do |t|
+    t.string :role_id, :limit => 128
+    t.references :resource, :polymorphic => true
+    t.integer :mask, :limit => 255, :default => 0, :null => false
+    t.datetime :updated_at
+  end
 end
