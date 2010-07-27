@@ -14,7 +14,7 @@ class ActiveSupport::TestCase
   self.use_transactional_fixtures = true
   self.use_instantiated_fixtures  = false
 
-  set_fixture_class :permissions => Authorize::Permission
+  set_fixture_class :permissions => Authorize::Permission, :roles => Authorize::Role
 
   def self.uses_mocha(description)
     require 'mocha'

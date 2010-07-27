@@ -9,6 +9,7 @@ class Authorize::Permission < ActiveRecord::Base
   cache_attributes('mask') # This is of questionable value given the specific implementation of mask attribute methods...
   
   belongs_to :_resource, :polymorphic => true, :foreign_type => 'resource_type', :foreign_key => 'resource_id'
+  belongs_to :role, :class_name => "Authorize::Role"
   validates_presence_of :role
   validates_presence_of :resource
 
@@ -43,12 +44,12 @@ class Authorize::Permission < ActiveRecord::Base
     end
     {:conditions => resource_conditions}
   }
-  named_scope :as, lambda {|role_ids| {:conditions => {:role_id => role_ids}}}
+  named_scope :as, lambda {|roles| {:conditions => {:role_id => roles.map(&:id)}}}
   named_scope :global, :conditions => {:resource_type => nil, :resource_id => nil}
 
   # Find the effective permissions over a given resource for a given set of role_ids
-  def self.effective(resource, role_ids)
-    over(resource).as(role_ids)
+  def self.effective(resource, roles)
+    over(resource).as(roles)
   end
 
   # Find the effective permission mask over a given resource for a given set of role_ids
@@ -74,11 +75,6 @@ class Authorize::Permission < ActiveRecord::Base
     cached = @attributes_cache['mask'] # undocumented hash of cache nicely invalidated by write_attribute
     return cached if cached && !reload
     @attributes_cache['mask'] = Mask.new(read_attribute('mask')) # Ensure we always return a Mask instance
-  end
-
-  def role
-#    Role.find(role_id)
-    role_id unless role_id == "missing"
   end
 
   def to_s(reduce = true)

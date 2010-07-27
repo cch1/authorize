@@ -20,16 +20,23 @@ ActiveRecord::Schema.define(:version => 0) do
       t.string :trustee_type, :limit => 25
       t.timestamps
   end
-  add_index :authorizations, [:role, :token, :subject_id, :subject_type], :unique => true, :name => "role_token_subject"
-  add_index :authorizations, [:token, :subject_id, :subject_type, :role], :unique => true, :name => "token_subject_role"
-  add_index :authorizations, [:subject_id, :subject_type, :token, :role], :unique => true, :name => "subject_token_role"
+  add_index :authorizations, [:role, :token, :subject_id, :subject_type], :unique => true
+  add_index :authorizations, [:token, :subject_id, :subject_type, :role], :unique => true
+  add_index :authorizations, [:subject_id, :subject_type, :token, :role], :unique => true
 
   create_table :authorize_permissions, :force => true do |t|
-    t.string :role_id, :limit => 128
+    t.references :role, :null => false
     t.references :resource, :polymorphic => true
     t.integer :mask, :limit => 255, :default => 0, :null => false
     t.datetime :updated_at
   end
-  add_index :authorize_permissions, [:role_id, :resource_id, :resource_type], :unique => true, :name => "role_resource"
-  add_index :authorize_permissions, [:resource_id, :resource_type, :role_id], :unique => true, :name => "resource_role"
+  add_index :authorize_permissions, [:role_id, :resource_id, :resource_type], :unique => true
+  add_index :authorize_permissions, [:resource_id, :resource_type, :role_id], :unique => true
+
+  create_table :authorize_roles, :force => true do |t|
+    t.references :resource, :polymorphic => true
+    t.string :name
+    t.datetime :updated_at
+  end
+  add_index :authorize_roles, [:resource_type, :resource_id, :name], :unique => true
 end

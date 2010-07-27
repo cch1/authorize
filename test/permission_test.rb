@@ -1,10 +1,10 @@
 require File.expand_path(File.dirname(__FILE__) + "/application/test/test_helper.rb")
 
 class PermissionTest < ActiveSupport::TestCase
-  fixtures :users, :widgets, :permissions
+  fixtures :all
 
   test 'create' do
-    p = Authorize::Permission.create(:role_id => "X", :resource => widgets(:bar), :mask => 2)
+    p = Authorize::Permission.create(:role => roles(:user_chris), :resource => widgets(:bar), :mask => 2)
     assert p.valid?, p.errors.full_messages
     assert_equal Set.new([:list, :read]), p.reload.mask
   end
@@ -44,7 +44,7 @@ class PermissionTest < ActiveSupport::TestCase
   end
 
   test 'invalid with missing role' do
-    p = Authorize::Permission.new(:role_id => "missing")
+    p = Authorize::Permission.new
     assert !p.valid?
     assert p.errors.on(:role)
   end
@@ -99,18 +99,6 @@ class PermissionTest < ActiveSupport::TestCase
     assert_equal Set[permissions(:b_overlord), permissions(:c_all_widgets), permissions(:a_read_foo)], Authorize::Permission.over(widgets(:foo)).to_set
   end
 
-#  test 'should find effective permissions with array of roles' do
-#    assert_equal 3, Permission.find_effective(widgets(:bar), nil, ['proxy', 'overlord']).size
-#  end
-#
-#  test 'should find effective permissions with array of role_ids' do
-#    assert_equal 2, Permission.find_effective(widgets(:bar), [users(:chris).authorization_role_id, users(:pascale).authorization_role_id], nil).size
-#  end
-#
-#  test 'should find with role_id object' do
-#    assert_equal 2, Permission.count(:conditions => {:role_id => users(:chris).authorization_role_id})
-#  end
-#
 #  test 'should restrict to authorized scope' do
 #    assert_equal 2, Permission.authorized(users(:chris).authorization_role_id, nil).count
 #    assert_equal 1, Permission.authorized(users(:pascale).authorization_role_id, nil).count
@@ -125,10 +113,10 @@ class PermissionTest < ActiveSupport::TestCase
 #  end
 
   test 'effective permissions' do
-    assert_equal Set[permissions(:d_update_bar), permissions(:e_delete_bar)], Authorize::Permission.effective(widgets(:bar), %w(d e)).to_set
+    assert_equal Set[permissions(:d_update_bar), permissions(:e_delete_bar)], Authorize::Permission.effective(widgets(:bar), Set[roles(:d), roles(:e)]).to_set
   end
 
   test 'effective permission mask' do
-    assert_equal Authorize::Permission::Mask[:list, :read, :update, :delete], Authorize::Permission.effective_mask(widgets(:bar), %w(d e))
+    assert_equal Authorize::Permission::Mask[:list, :read, :update, :delete], Authorize::Permission.effective_mask(widgets(:bar), Set[roles(:d), roles(:e)])
   end
 end
