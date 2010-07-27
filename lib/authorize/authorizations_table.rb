@@ -7,6 +7,10 @@ module Authorize
       end
 
       module ClassMethods
+        def authorizable_trustee
+          include Authorize::Trustee
+        end
+
         def acts_as_trustee(key = :authorization_token)
           if key
             define_method(:permissions) do

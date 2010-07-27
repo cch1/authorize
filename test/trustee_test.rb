@@ -1,14 +1,30 @@
 require File.expand_path(File.dirname(__FILE__) + "/application/test/test_helper.rb")
 
 class TrusteeTest < ActiveSupport::TestCase
-  fixtures :users, :widgets, :authorizations
+  fixtures :all
+
+  test 'has primary role' do
+    assert_equal roles(:user_chris), users(:chris).primary_role
+  end
+
+  test 'create primary role' do
+    assert_difference "Authorize::Role.count" do
+      users(:alex).create_primary_role
+    end
+  end
+
+  test 'has roles' do
+    assert_equal Set[roles(:user_chris)], roles = users(:chris).roles
+  end
+
+# ---------- Tests for deprecated functionality -----------
 
   test 'should identify permissions' do
     assert ps = users(:chris).permissions
     assert_equal 2, ps.size
     assert ps.any?{|p| p.subject == widgets(:foo) }
   end
-  
+
   test 'should know it is authorized' do
     assert users(:chris).authorized?('owner', widgets(:foo))
   end
@@ -45,7 +61,7 @@ class TrusteeTest < ActiveSupport::TestCase
     users(:chris).unauthorize('overlord')
     assert !users(:chris).authorized?('overlord')
   end
-  
+
   test 'should authorize degenerate user' do
     du = DegenerateUser.new
     assert_difference("Authorization.count", 1) do

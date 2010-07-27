@@ -2,6 +2,10 @@ class ::DegenerateUser
   include Authorize::AuthorizationsTable::TrusteeExtensions
   acts_as_trustee(false)
 
+  def roles
+    Authorize::Role.find_by_name('e')
+  end
+
   def authorization_token
     object_id
   end
@@ -14,4 +18,4 @@ class ::DegenerateUser
   def find_by_authorization_token(token)
     ObjectSpace._id2ref(token)
   end
-end  
+end
