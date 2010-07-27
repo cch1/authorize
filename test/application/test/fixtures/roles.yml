@@ -1,3 +1,6 @@
+a:
+  name: a
+  _resource: foo (Widget)
 administrator:
   name: administrator
 c:
