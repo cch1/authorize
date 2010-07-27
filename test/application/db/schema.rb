@@ -30,4 +30,6 @@ ActiveRecord::Schema.define(:version => 0) do
     t.integer :mask, :limit => 255, :default => 0, :null => false
     t.datetime :updated_at
   end
+  add_index :authorize_permissions, [:role_id, :resource_id, :resource_type], :unique => true, :name => "role_resource"
+  add_index :authorize_permissions, [:resource_id, :resource_type, :role_id], :unique => true, :name => "resource_role"
 end
