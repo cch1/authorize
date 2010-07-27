@@ -13,15 +13,15 @@ module Authorize
 
         def acts_as_trustee(key = :authorization_token)
           if key
-            define_method(:permissions) do
+            define_method(:_permissions) do
               token = send(key)
               Authorization.with(token).scoped(:conditions => {:trustee_type => self.class.base_class.name})
             end
             before_destroy do |trustee|
-              trustee.permissions.delete_all
+              trustee._permissions.delete_all
             end
             class_eval do
-              alias :authorizations :permissions
+              alias :authorizations :_permissions
             end
           end
           include Authorize::AuthorizationsTable::TrusteeExtensions::InstanceMethods
@@ -31,20 +31,20 @@ module Authorize
 
       module InstanceMethods
         def authorized?(role, subject = nil)
-          !!permissions.as(role).for(subject).any?
+          !!_permissions.as(role).for(subject).any?
         end
 
         def authorize(role, subject = nil, parent = nil)
-          unless auth = permissions.as(role).for(subject).first
+          unless auth = _permissions.as(role).for(subject).first
             attrs = respond_to?(:parent) ? {:parent => parent} : {} # Support tree-structured authorizations.
-            auth = permissions.as(role).for(subject).create(attrs)
+            auth = _permissions.as(role).for(subject).create(attrs)
             Authorization.logger.debug "#{self} authorized as #{role} over #{subject} (derived from #{parent})"
           end
           auth
         end
 
         def unauthorize(role, subject = nil)
-          permissions.as(role).for(subject).delete_all
+          _permissions.as(role).for(subject).delete_all
         end
       end
     end
@@ -55,6 +55,10 @@ module Authorize
       end
 
       module ClassMethods
+        def authorizable_resource
+          include Authorize::Resource
+        end
+
         def acts_as_subject
           has_many :subjections, :as => :subject, :class_name => 'Authorization', :dependent => :delete_all
           include Authorize::AuthorizationsTable::SubjectExtensions::InstanceMethods

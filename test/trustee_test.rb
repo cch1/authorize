@@ -20,7 +20,7 @@ class TrusteeTest < ActiveSupport::TestCase
 # ---------- Tests for deprecated functionality -----------
 
   test 'should identify permissions' do
-    assert ps = users(:chris).permissions
+    assert ps = users(:chris)._permissions
     assert_equal 2, ps.size
     assert ps.any?{|p| p.subject == widgets(:foo) }
   end
