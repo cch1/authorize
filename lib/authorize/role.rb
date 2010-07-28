@@ -6,6 +6,20 @@ class Authorize::Role < ActiveRecord::Base
   has_many :permissions, :class_name => "Authorize::Permission", :dependent => :delete_all
   validates_uniqueness_of :name, :scope => [:resource_type, :resource_id]
 
+  # This exists to simplify finding and creating global and class-level roles.  For resource instance-related
+  # roles, use the standard Rails association (#roles) created for authorizable resources.
+  named_scope :for, lambda {|resource|
+    resource_conditions = if (resource == Object) then
+       {:resource_id => nil, :resource_type => nil}
+    elsif resource.is_a?(Class) then
+       {:resource_id => nil, :resource_type => resource.to_s}
+    else
+       {:resource_id => resource.id, :resource_type => resource.class.to_s}
+    end
+    {:conditions => resource_conditions}
+  }
+  named_scope :identity, :conditions => {:name => nil}
+
   # Virtual attribute that expands the common belongs_to association with a three-level hierarchy
   def resource
     return Object unless resource_type

@@ -19,6 +19,8 @@ class Authorize::Permission < ActiveRecord::Base
   #   Object                global permissions are returned
   #   <Resource Class>      global and class permissions are returned
   #   <Resource Instance>   global, class and instance permissions are returned
+  # This exists to simplify finding and creating global and class permissions.  For resource instance
+  # permissions, use the standard Rails association (#permissions) created for authorizable resources.
   named_scope :for, lambda {|resource|
     resource_conditions = if (resource == Object) then
        {:resource_id => nil, :resource_type => nil}
