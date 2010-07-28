@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + "/application/test/test_helper.rb")
+require 'test_helper'
 
 class ControllerTest < ActionController::TestCase
   fixtures :users, :widgets, :authorizations

@@ -1,5 +1,6 @@
-require File.expand_path(File.dirname(__FILE__) + "/application/test/test_helper.rb")
-require 'authorize/redis'
+require 'test_helper'
+
+#require 'authorize/redis'
 
 class RedisTest < ActiveSupport::TestCase
   def setup

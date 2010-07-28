@@ -7,8 +7,8 @@ task :default => :test
 
 desc 'Test the authorize plugin.'
 Rake::TestTask.new(:test) do |t|
-  t.libs << 'lib'
-  t.pattern = 'test/**/*_test.rb'
+  t.libs << 'test/test'
+  t.pattern = 'test/test/**/*_test.rb'
   t.verbose = true
 end
 

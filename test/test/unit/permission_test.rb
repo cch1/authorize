@@ -1,4 +1,5 @@
-require File.expand_path(File.dirname(__FILE__) + "/application/test/test_helper.rb")
+require 'test_helper'
+
 
 class PermissionTest < ActiveSupport::TestCase
   fixtures :all
@@ -22,7 +23,7 @@ class PermissionTest < ActiveSupport::TestCase
     assert_equal widgets(:foo).id, p[:resource_id]
     assert p.changed?
   end
-    
+
   test 'resource writer with class' do
     p = permissions(:a_list_bar)
     p.resource = Widget

@@ -1,5 +1,6 @@
-require File.expand_path(File.dirname(__FILE__) + "/application/test/test_helper.rb")
-require 'authorize/role'
+require 'test_helper'
+
+#require 'authorize/role'
 
 class RoleTest < ActiveSupport::TestCase
   fixtures :all

@@ -4,9 +4,6 @@ ActiveRecord::Schema.define(:version => 0) do
     t.string :authorization_token, :limit => Token.size
     t.timestamps
   end
-  create_table :degenerate_users, :force => true do |t|
-    t.string :login, :limit => 80
-  end
   create_table :widgets, :force => true do |t|
     t.string :name, :limit => 20
     t.timestamps
