@@ -6,8 +6,10 @@ class Authorize::Permission < ActiveRecord::Base
   end
 
   set_table_name 'authorize_permissions'
-  cache_attributes('mask') # This is of questionable value given the specific implementation of mask attribute methods...
-  
+  # This is of questionable value given the specific implementation of mask attribute methods.  It also requires
+  # table inspection, so we skip it if the table does not yet exist.
+  cache_attributes('mask') if table_exists?
+
   belongs_to :_resource, :polymorphic => true, :foreign_type => 'resource_type', :foreign_key => 'resource_id'
   belongs_to :role, :class_name => "Authorize::Role"
   validates_presence_of :role

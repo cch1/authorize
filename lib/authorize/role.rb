@@ -23,11 +23,11 @@ class Authorize::Role < ActiveRecord::Base
   def to_s
     (name || "%s") % resource rescue "!! INVALID ROLE NAME !!"
   end
-  
+
   def children
     raise "Not Yet Implemented"
   end
-  
+
   def parents
     raise "Not Yet Implemented"
   end
