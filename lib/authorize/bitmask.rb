@@ -4,10 +4,20 @@ class Authorize::Bitmask < Set
   include Comparable
 
   class << self
-    attr_accessor :name_values
+    attr_reader :name_values
     def new(fixnum_or_enum = Set.new)
-      fixnum_or_enum = enum(fixnum_or_enum) if fixnum_or_enum.kind_of?(Fixnum)
-      super(fixnum_or_enum)
+      enum = fixnum_or_enum.kind_of?(Fixnum) ? enum(fixnum_or_enum) : fixnum_or_enum
+      super(enum)
+    end
+
+    # Record bit names and define dynamic methods
+    def name_values=(h)
+      h.each do |n, v|
+        define_method("_#{n}") {include?(n) ? true : false}
+        define_method("_#{n}=") {|v| v ? self.add(n) : self.delete(n)}
+        alias_method "_#{n}?", "_#{n}"
+      end
+      @name_values = h
     end
 
     # The maximum value this bitmask can hold (in which every named bit is set).
@@ -21,7 +31,6 @@ class Authorize::Bitmask < Set
       name_values.inject(Set[]){|s, (p, v)| s << p if (v == (mask & v)); s }
     end
   end
-  self.name_values = {:none => 0, :first => 1, :second => 2, :third => 4, :fourth => 8, :first_nibble => 15, :fifth => 16, :sixth => 32, :seventh => 64, :eighth => 128, :all => 255}
 
   def add(el)
     raise ArgumentError, "Unrecognized bit name" unless self.class.name_values.keys.include?(el)
@@ -60,7 +69,7 @@ class Authorize::Bitmask < Set
     self.class.new(to_int)
   end
 
-  # Comparability derives from integer representation 
+  # Comparability derives from integer representation
   def <=>(other)
     to_int <=> other.to_int
   end

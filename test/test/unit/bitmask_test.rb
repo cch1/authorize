@@ -60,6 +60,26 @@ class BitmaskTest < ActiveSupport::TestCase
     assert_operator 255, :==, b0
   end
 
+  test 'dynamic bit getters' do
+    b = @bitmask[:first, :second]
+    assert b._first
+    assert !b._third
+  end
+
+  test 'dynamic bit setters' do
+    b = @bitmask[:first, :second]
+    b._first = false
+    assert !b.include?(:first)
+    b._third = false
+    assert !b.include?(:third)
+  end
+
+  test 'dynamic bit predicates' do
+    b = @bitmask[:first, :second]
+    assert b._first?
+    assert !b._third?
+  end
+
   test 'complete' do
     b = @bitmask[]
     assert_equal Set[:none], b.complete
