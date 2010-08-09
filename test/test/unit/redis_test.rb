@@ -129,7 +129,7 @@ class RedisTest < ActiveSupport::TestCase
     assert g0.join(v0, v1, :name => "I 64")
     [[v0, v1], [v1, v0]].each do |(vl, vr)|
       assert_equal 1, vl.edges.size
-      assert_kind_of Authorize::Graph::Edge, e = vl.edges.first
+      assert_kind_of Authorize::Graph::Edge, e = vl.edges.to_a.first
       assert_same vr, e.right
       assert g0.edges.include?(e)
     end

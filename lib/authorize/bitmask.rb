@@ -41,7 +41,7 @@ class Authorize::Bitmask < Set
 
   # Return an equivalent Bitmask using only fundamental names, never aggregate names
   def fundamental
-    complete.to_canonical_array.reduce(self.class.new) do |memo, n|
+    complete.to_canonical_array.inject(self.class.new) do |memo, n|
       memo << n unless (memo.to_i & self.class.name_values[n]) == self.class.name_values[n]
       memo
     end
@@ -49,7 +49,7 @@ class Authorize::Bitmask < Set
 
   # Return an equivalent Bitmask using aggregated names to replace fundamental names where possible
   def minimal
-    complete.to_canonical_array.reverse.reduce(self.class.new) do |memo, n|
+    complete.to_canonical_array.reverse.inject(self.class.new) do |memo, n|
       memo << n unless (memo.to_i & self.class.name_values[n]) == self.class.name_values[n]
       memo
     end

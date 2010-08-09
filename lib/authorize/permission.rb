@@ -58,7 +58,7 @@ class Authorize::Permission < ActiveRecord::Base
 
   # Find the effective permission mask over a given resource for a given set of role_ids
   def self.effective_mask(*args)
-    effective(*args).reduce(Mask.new){|memo, p| memo.merge(p.mask)}.complete
+    effective(*args).inject(Mask.new){|memo, p| memo.merge(p.mask)}.complete
   end
 
   # Virtual attribute that expands the common belongs_to association with a three-level hierarchy
