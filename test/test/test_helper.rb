@@ -31,6 +31,4 @@ module Mocha
   end
 end
 
-db = ::Redis.new.tap {|r| r.select 15}
-raise "Test Database doesn't look safe" unless db.dbsize < 100
-Authorize::Redis.db = db
+raise "Test Database doesn't look safe" unless Authorize::Redis.db.dbsize < 200
