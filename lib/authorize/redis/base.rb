@@ -113,16 +113,16 @@ module Authorize
 
     class Hash < Base
       def get(k)
-        Marshal.load(self.class.db.hget(id, k))
+        Marshal.load(self.class.db.hget(id, Marshal.dump(k)))
       end
 
       def set(k, v)
-        self.class.db.hset(id, k, Marshal.dump(v))
+        self.class.db.hset(id, Marshal.dump(k), Marshal.dump(v))
       end
 
       def merge(h)
         args = h.inject([]) do |m,(k,v)|
-          m << k
+          m << Marshal.dump(k)
           m << Marshal.dump(v)
         end
         self.class.db.hmset(id, *args)
@@ -130,7 +130,7 @@ module Authorize
 
       def to_hash
         self.class.db.hgetall(id).inject({}) do |m, (k,v)|
-          m[k] = Marshal.load(v)
+          m[Marshal.load(k)] = Marshal.load(v)
           m
         end
       end

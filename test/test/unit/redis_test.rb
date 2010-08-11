@@ -65,4 +65,13 @@ class RedisTest < ActiveSupport::TestCase
     b = v0.get
     assert_same a, b
   end
+
+# --Hash--------------------------------------------------------------------
+
+  test 'hash keys are serialized' do
+    h = Authorize::Redis::Hash.new
+    h.set(nil, 'nil')
+    h.set("", 'empty')
+    assert_equal 'nil', h.get(nil)
+  end
 end
