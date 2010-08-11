@@ -6,4 +6,4 @@ db_signature = db.get(signature_key)
 # This exception is triggered to protect against corruption.
 # To re-purpose an existing database, manually re-sign it.  Do not disable this assertion!
 raise "Database signature is invalid! #{db_signature}" unless db_signature == signature
-Authorize::Redis.db = db
+Authorize::Redis::Base.db = db

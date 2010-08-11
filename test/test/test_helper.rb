@@ -31,4 +31,4 @@ module Mocha
   end
 end
 
-raise "Test Database doesn't look safe" unless Authorize::Redis.db.dbsize < 200
+raise "Test Database doesn't look safe" unless Authorize::Redis::Base.db.dbsize < 200
