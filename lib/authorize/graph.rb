@@ -11,11 +11,9 @@ module Authorize
       end
 
       def initialize(properties = {})
-        self.class.db.multi do
-          super()
-          Redis::Value.new(subordinate_key('marker')).set(nil)
-          merge(properties) if properties.any?
-        end
+        super()
+        Redis::Value.new(subordinate_key('marker')).set(nil)
+        merge(properties) if properties.any?
       end
 
       def edges
@@ -45,13 +43,11 @@ module Authorize
       end
 
       def initialize(v0, v1, properties = {})
-        self.class.db.multi do
-          super()
-          Redis::Value.new(subordinate_key('l')).set(v0)
-          Redis::Value.new(subordinate_key('r')).set(v1)
-          v0.edges << self
-          merge(properties) if properties.any?
-        end
+        super()
+        Redis::Value.new(subordinate_key('l')).set(v0)
+        Redis::Value.new(subordinate_key('r')).set(v1)
+        v0.edges << self
+        merge(properties) if properties.any?
         @l, @r = v0, v1
       end
 

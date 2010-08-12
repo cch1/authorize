@@ -51,23 +51,49 @@ class RedisTest < ActiveSupport::TestCase
     a = [1,2,3]
     v0 = Authorize::Redis::Value.new
     v0.set(a)
-    b = v0.get
+    b = v0.__getobj__
     assert_equal a, b
   end
 
   # Do Redis objects stored and retrieved as values honor the coherency contract?
   # This is a test of the strict serializability of Redis objects and the serialization of values.
   test 'serialization as value' do
-    a = Authorize::Redis::Set.new
-    a.add(1);a.add(2);a.add(3)
+    a = Authorize::Redis::Value.new
+    a.set(1)
     v0 = Authorize::Redis::Value.new
     v0.set(a)
-    b = v0.get
+    b = v0.__getobj__
     assert_same a, b
   end
 
-# --Hash--------------------------------------------------------------------
+# --Value-------------------------------------------------------------------
+  test 'proxy to native object' do
+    v = Authorize::Redis::Value.new
+    v.set(23)
+    assert_equal 25, v + 2
+  end
 
+  test 'proxy is frozen' do
+    v = Authorize::Redis::Value.new
+    v.set("ABC")
+    assert_raises TypeError do
+      v << "DEF"
+    end
+  end
+
+# --Set---------------------------------------------------------------------
+  test 'proxy to native set' do
+    s = Authorize::Redis::Set.new
+    s.add(23)
+    assert_equal 1, s.length
+  end
+
+  test 'enumerable' do
+    s = Authorize::Redis::Set.new
+    s.add(23);s.add(27)
+    assert_equal 50, s.inject{|m, e| m + e}
+  end
+# --Hash--------------------------------------------------------------------
   test 'hash keys are serialized' do
     h = Authorize::Redis::Hash.new
     h.set(nil, 'nil')

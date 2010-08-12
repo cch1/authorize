@@ -1,5 +1,3 @@
-require 'enumerator'
-
 module Authorize
   module Redis
     # The key feature of this class is that it presents a coherent view of the database in memory.  For
@@ -56,6 +54,12 @@ module Authorize
       end
 
       attr_reader :id
+      alias to_s id
+
+      def subordinate_key(name, counter = false)
+        k = [id, name].join(':')
+        counter ? [k, self.class.counter(k)].join(':') : k
+      end
 
       # This hook accomodates re-initializing a previously initialized object that has been persisted.
       # It is good practice to limit re-initialization to idempotent operations.
@@ -65,14 +69,25 @@ module Authorize
         id
       end
 
-      def subordinate_key(name, counter = false)
-        k = [id, name].join(':')
-        counter ? [k, self.class.counter(k)].join(':') : k
+      # Methods that don't change the state of the object can safely delegate to a Ruby proxy object
+      def __getobj__
+        raise "Abstract class requires implementation"
+      end
+
+      def method_missing(m, *args, &block)
+        proxy = __getobj__ # Performance tweak
+        return super unless proxy.respond_to?(m) # If there is going to be an explosion, let superclass handle it.
+        proxy.freeze.__send__(m, *args, &block) # Ensure no state can be changed and send the method on its way.
+      end
+
+      def respond_to?(m, include_private = false)
+        return true if super
+        __getobj__.respond_to?(m, include_private)
       end
     end
 
     class Value < Base
-      def get
+      def __getobj__
         Marshal.load(self.class.db.get(id))
       end
 
@@ -82,7 +97,7 @@ module Authorize
     end
 
     class Set < Base
-      include Enumerable
+      undef to_a # In older versions of Ruby, Object#to_a is invoked and #method_missing is never called.
 
       def add(v)
         self.class.db.sadd(id, Marshal.dump(v))
@@ -93,25 +108,14 @@ module Authorize
         self.class.db.sdelete(id, Marshal.dump(v))
       end
 
-      def members
-        self.class.db.smembers(id).map{|s| Marshal.load(s)}
+      def __getobj__
+        self.class.db.smembers(id).map{|s| Marshal.load(s)}.to_set
       end
-
-      def each(&block)
-        members.each(&block)
-      end
-
-      def empty?
-        members.empty?
-      end
-
-      def size
-        members.size
-      end
-      alias length size
     end
 
     class Hash < Base
+      undef to_a # In older versions of Ruby, Object#to_a is invoked and #method_missing is never called.
+
       def get(k)
         Marshal.load(self.class.db.hget(id, Marshal.dump(k)))
       end
@@ -128,7 +132,7 @@ module Authorize
         self.class.db.hmset(id, *args)
       end
 
-      def to_hash
+      def __getobj__
         self.class.db.hgetall(id).inject({}) do |m, (k,v)|
           m[Marshal.load(k)] = Marshal.load(v)
           m
