@@ -8,6 +8,7 @@ class GraphTest < ActiveSupport::TestCase
     Authorize::Graph.index.clear
     Authorize::Graph::Vertex.index.clear
     Authorize::Graph::Edge.index.clear
+    redis_fixtures(Authorize::Redis::Base.db, Pathname.new(fixture_path).join('redis', 'db.yml'))
   end
 
   test 'create graph' do
@@ -23,7 +24,7 @@ class GraphTest < ActiveSupport::TestCase
   end
 
   test 'rich vertex' do
-    assert_kind_of Authorize::Graph::Vertex, v = Authorize::Graph::Vertex.new(nil, :prop => :value)
+    assert_kind_of Authorize::Graph::Vertex, v = Authorize::Graph::Vertex.new('name', :prop => :value)
     Authorize::Graph::Vertex.index.clear
     assert_equal :value, Authorize::Graph::Vertex.new(v.id).get(:prop)
   end
@@ -39,21 +40,21 @@ class GraphTest < ActiveSupport::TestCase
 
   test 'rich edge' do
     v0, v1 = Authorize::Graph::Vertex.new, Authorize::Graph::Vertex.new
-    assert_kind_of Authorize::Graph::Edge, e = Authorize::Graph::Edge.new(nil, v0, v1, :prop => :value)
+    assert_kind_of Authorize::Graph::Edge, e = Authorize::Graph::Edge.new("name", v0, v1, :prop => :value)
     Authorize::Graph::Edge.index.clear
     assert_equal :value, Authorize::Graph::Edge.new(e.id).get(:prop)
   end
 
   test 'add vertex' do
     g0 = Authorize::Graph.new
-    assert_kind_of Authorize::Graph::Vertex, v0 = g0.vertex(:name => "Charlottesville")
+    assert_kind_of Authorize::Graph::Vertex, v0 = g0.vertex("Charlottesville")
     assert g0.include?(v0)
   end
 
   test 'add edge' do
     g0 = Authorize::Graph.new
-    v0, v1 = g0.vertex(:name => "Charlottesville"), g0.vertex(:name => "Richmond")
-    assert_kind_of Authorize::Graph::Edge, e = g0.edge(v0, v1, :name => "I 64")
+    v0, v1 = g0.vertex("Charlottesville"), g0.vertex("Richmond")
+    assert_kind_of Authorize::Graph::Edge, e = g0.edge("I64", v0, v1)
     assert v0.edges.include?(e)
     assert v1.edges.empty?
     assert_same v0, e.left
@@ -63,8 +64,8 @@ class GraphTest < ActiveSupport::TestCase
 
   test 'join vertices' do
     g0 = Authorize::UndirectedGraph.new
-    v0, v1 = g0.vertex(:name => "Charlottesville"), g0.vertex(:name => "Richmond")
-    assert g0.join(v0, v1, :name => "I 64")
+    v0, v1 = g0.vertex("Charlottesville"), g0.vertex("Richmond")
+    assert g0.join("I64", v0, v1)
     [[v0, v1], [v1, v0]].each do |(vl, vr)|
       assert_equal 1, vl.edges.size
       assert_kind_of Authorize::Graph::Edge, e = vl.edges.to_a.first
@@ -75,57 +76,57 @@ class GraphTest < ActiveSupport::TestCase
 
   test 'traverse acyclic graph' do
     g0 = Authorize::Graph.new
-    v0 = g0.vertex(:name => "Charlottesville")
-    v1 = g0.vertex(:name => "Richmond")
-    v2 = g0.vertex(:name => "Springfield")
-    v3 = g0.vertex(:name => "Dunn Loring")
-    v4 = g0.vertex(:name => "Centreville")
-    v5 = g0.vertex(:name => "Strasburg")
-    v6 = g0.vertex(:name => "Staunton")
-    e0 = g0.edge(v0, v1, :name => "I 64", :cost => 100)
-    e1 = g0.edge(v1, v2, :name => "I 95", :cost => 85)
-    e2 = g0.edge(v2, v3, :name => "I 495", :cost => 20)
-    e3 = g0.edge(v3, v4, :name => "I 66", :cost => 40)
-    e4 = g0.edge(v4, v5, :name => "I 66", :cost => 120)
-    e5 = g0.edge(v5, v6, :name => "I 81", :cost => 130)
-    assert_equal Set[v2, v5, v6], g0.traverse(v0).select{|v| /S.*/.match(v.get(:name))}.to_set
+    v0 = g0.vertex("Charlottesville")
+    v1 = g0.vertex("Richmond")
+    v2 = g0.vertex("Springfield")
+    v3 = g0.vertex("Dunn Loring")
+    v4 = g0.vertex("Centreville")
+    v5 = g0.vertex("Strasburg")
+    v6 = g0.vertex("Staunton")
+    e0 = g0.edge(nil, v0, v1, :name => "I 64", :cost => 100)
+    e1 = g0.edge(nil, v1, v2, :name => "I 95", :cost => 85)
+    e2 = g0.edge(nil, v2, v3, :name => "I 495", :cost => 20)
+    e3 = g0.edge(nil, v3, v4, :name => "I 66", :cost => 40)
+    e4 = g0.edge(nil, v4, v5, :name => "I 66", :cost => 120)
+    e5 = g0.edge(nil, v5, v6, :name => "I 81", :cost => 130)
+    assert_equal Set[v2, v5, v6], g0.traverse(v0).select{|v| /S.*/.match(v.id)}.to_set
   end
 
   test 'traverse graph' do
-    g0 = Authorize::UndirectedGraph.new
-    v0 = g0.vertex(:name => "Charlottesville")
-    v1 = g0.vertex(:name => "Richmond")
-    v2 = g0.vertex(:name => "Springfield")
-    v3 = g0.vertex(:name => "Dunn Loring")
-    v4 = g0.vertex(:name => "Centreville")
-    v5 = g0.vertex(:name => "Strasburg")
-    v6 = g0.vertex(:name => "Staunton")
-    e0a = g0.join(v6, v0, :name => "I 64", :cost => 95)
-    e0b = g0.join(v0, v1, :name => "I 64", :cost => 100)
-    e1 = g0.join(v1, v2, :name => "I 95", :cost => 85)
-    e2 = g0.join(v2, v3, :name => "I 495", :cost => 20)
-    e3a = g0.join(v3, v4, :name => "I 66", :cost => 40)
-    e3b = g0.join(v4, v5, :name => "I 66", :cost => 120)
-    e4 = g0.join(v5, v6, :name => "I 81", :cost => 130)
-    e5 = g0.join(v0, v4, :name => "US 29", :cost => 200)
+    g0 = Authorize::UndirectedGraph.new("Highways")
+    v0 = g0.vertex("Charlottesville")
+    v1 = g0.vertex("Richmond")
+    v2 = g0.vertex("Springfield")
+    v3 = g0.vertex("Dunn Loring")
+    v4 = g0.vertex("Centreville")
+    v5 = g0.vertex("Strasburg")
+    v6 = g0.vertex("Staunton")
+    e0a = g0.join(nil, v6, v0, :name => "I 64", :cost => 95)
+    e0b = g0.join(nil, v0, v1, :name => "I 64", :cost => 100)
+    e1 = g0.join(nil, v1, v2, :name => "I 95", :cost => 85)
+    e2 = g0.join(nil, v2, v3, :name => "I 495", :cost => 20)
+    e3a = g0.join(nil, v3, v4, :name => "I 66", :cost => 40)
+    e3b = g0.join(nil, v4, v5, :name => "I 66", :cost => 120)
+    e4 = g0.join(nil, v5, v6, :name => "I 81", :cost => 130)
+    e5 = g0.join(nil, v0, v4, :name => "US 29", :cost => 200)
     assert_equal 7, g0.traverse.to_set.size
   end
 
   test 'traverse acyclic graph from vertex' do
-    g0 = Authorize::Graph.new
-    v0 = g0.vertex(:name => "Charlottesville")
-    v1 = g0.vertex(:name => "Richmond")
-    v2 = g0.vertex(:name => "Springfield")
-    v3 = g0.vertex(:name => "Dunn Loring")
-    v4 = g0.vertex(:name => "Centreville")
-    v5 = g0.vertex(:name => "Strasburg")
-    v6 = g0.vertex(:name => "Staunton")
-    e0 = g0.edge(v0, v1, :name => "I 64", :cost => 100)
-    e1 = g0.edge(v1, v2, :name => "I 95", :cost => 85)
-    e2 = g0.edge(v2, v3, :name => "I 495", :cost => 20)
-    e3 = g0.edge(v3, v4, :name => "I 66", :cost => 40)
-    e4 = g0.edge(v4, v5, :name => "I 66", :cost => 120)
-    e5 = g0.edge(v5, v6, :name => "I 81", :cost => 130)
+    g0 = Authorize::Graph.new("Interstates")
+    v0 = g0.vertex("Charlottesville")
+    v1 = g0.vertex("Richmond")
+    v2 = g0.vertex("Springfield")
+    v3 = g0.vertex("Dunn Loring")
+    v4 = g0.vertex("Centreville")
+    v5 = g0.vertex("Strasburg")
+    v6 = g0.vertex("Staunton")
+    e0 = g0.edge(nil, v0, v1, :name => "I 64", :cost => 100)
+    e1 = g0.edge(nil, v1, v2, :name => "I 95", :cost => 85)
+    e2 = g0.edge(nil, v2, v3, :name => "I 495", :cost => 20)
+    e3 = g0.edge(nil, v3, v4, :name => "I 66", :cost => 40)
+    e4 = g0.edge(nil, v4, v5, :name => "I 66", :cost => 120)
+    e5 = g0.edge(nil, v5, v6, :name => "I 81", :cost => 130)
     assert_equal Set[v3, v4, v5, v6], v3.traverse.to_set
   end
 end

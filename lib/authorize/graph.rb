@@ -89,14 +89,14 @@ module Authorize
       @edges ||= Redis::Set.new(subordinate_key('edges'))
     end
 
-    def vertex(*args)
-      Vertex.new(subordinate_key("_vertices", true), *args).tap do |v|
+    def vertex(id, *args)
+      Vertex.new(subordinate_key(id || "_vertices", !id), *args).tap do |v|
         add(v)
       end
     end
 
-    def edge(*args)
-      Edge.new(subordinate_key("_edges", true), *args).tap do |e|
+    def edge(id, *args)
+      Edge.new(subordinate_key(id || "_edges", !id), *args).tap do |e|
         edges << e
       end
     end
@@ -109,8 +109,9 @@ module Authorize
   class UndirectedGraph < Authorize::Graph
     # Join two vertices symetrically so that they become adjacent.  Graphs built uniquely with
     # this method will be undirected.
-    def join(v0, v1, *args)
-      !!(edge(v0, v1, *args) && edge(v1, v0, *args))
+    def join(id, v0, v1, *args)
+      edge_id = subordinate_key(id || "_edges", !id)
+      !!(edge(edge_id + "-01", v0, v1, *args) && edge(edge_id + "-10", v1, v0, *args))
     end
   end
 end
