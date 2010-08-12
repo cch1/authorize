@@ -4,6 +4,8 @@ require 'test_help'
 
 # Set Test::Unit options for optimal performance/fidelity.
 class ActiveSupport::TestCase
+  include Authorize::Redis::Fixtures
+
   self.use_transactional_fixtures = true
   self.use_instantiated_fixtures  = false
 

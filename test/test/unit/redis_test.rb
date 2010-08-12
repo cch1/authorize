@@ -8,6 +8,13 @@ class RedisTest < ActiveSupport::TestCase
     Authorize::Redis::Hash.index.clear
   end
 
+  test 'fixtures' do
+    redis_fixtures(Authorize::Redis::Base.db, Pathname.new(fixture_path).join('redis', 'db.yml'))
+    assert_equal 'x', Authorize::Redis::Value.new('x').__getobj__
+    assert_equal Set[1,2], Authorize::Redis::Set.new("set").__getobj__
+    assert_equal({:a => 1, :b => 2}, Authorize::Redis::Hash.new("hash").__getobj__)
+  end
+
   test 'coherent identity from cache' do
     assert o0 = Authorize::Redis::Value.new('xyx')
     assert o1 = Authorize::Redis::Value.new('xyx')
