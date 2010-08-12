@@ -12,7 +12,7 @@ class GraphTest < ActiveSupport::TestCase
 
   test 'create graph' do
     assert_kind_of Authorize::Graph, g0 = Authorize::Graph.new
-    assert_kind_of Authorize::Redis::Set, g0.vertices
+    assert_kind_of Authorize::Redis::Set, g0
     assert_kind_of Authorize::Redis::Set, g0.edges
   end
 
@@ -47,7 +47,7 @@ class GraphTest < ActiveSupport::TestCase
   test 'add vertex' do
     g0 = Authorize::Graph.new
     assert_kind_of Authorize::Graph::Vertex, v0 = g0.vertex(:name => "Charlottesville")
-    assert g0.vertices.include?(v0)
+    assert g0.include?(v0)
   end
 
   test 'add edge' do

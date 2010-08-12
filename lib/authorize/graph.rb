@@ -3,7 +3,7 @@ require 'authorize/redis'
 module Authorize
   # A binary property graph.  Vertices and Edges have an arbitrary set of named properties.
   # Reference: http://www.nist.gov/dads/HTML/graph.html
-  class Graph < Authorize::Redis::Base
+  class Graph < Authorize::Redis::Set
     class Vertex < Authorize::Redis::Hash
       # Because a degenerate vertex can have neither properties nor edges, we must store a marker to indicate existence
       def self.exists?(id)
@@ -29,7 +29,7 @@ module Authorize
       end
 
       def to_s
-        get(:name) || "Unnamed"
+        get(:name) || "Unnamed" rescue super
       end
     end
 
@@ -60,7 +60,7 @@ module Authorize
       end
 
       def to_s
-        get(:name) || "Unnamed"
+        get(:name) || "Unnamed" rescue super
       end
     end
 
@@ -89,13 +89,9 @@ module Authorize
       @edges ||= Redis::Set.new(subordinate_key('edges'))
     end
 
-    def vertices
-      @vertices ||= Redis::Set.new(subordinate_key('vertices'))
-    end
-
     def vertex(*args)
       Vertex.new(subordinate_key("_vertices", true), *args).tap do |v|
-        vertices << v
+        add(v)
       end
     end
 
@@ -105,7 +101,7 @@ module Authorize
       end
     end
 
-    def traverse(start = vertices.sort_by{rand}.first)
+    def traverse(start = sort_by{rand}.first)
       Traverser.new(start)
     end
   end
