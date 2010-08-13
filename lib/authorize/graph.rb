@@ -6,7 +6,7 @@ module Authorize
   class Graph < Authorize::Redis::Set
     class Vertex < Authorize::Redis::Hash
       def self.exists?(id)
-        super([id, '_'].join(':'))
+        super(subordinate_key(id, '_'))
       end
 
       def initialize(properties = {})
@@ -34,7 +34,7 @@ module Authorize
     # TODO: a hyperedge can be modeled with a set of vertices instead of explicit left and right vertices.
     class Edge < Authorize::Redis::Hash
       def self.exists?(id)
-        super([id, 'l'].join(':'))
+        super(subordinate_key(id, 'l'))
       end
 
       def initialize(v0, v1, properties = {})

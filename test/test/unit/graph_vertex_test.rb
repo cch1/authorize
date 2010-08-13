@@ -12,13 +12,13 @@ class GraphVertexTest < ActiveSupport::TestCase
     Marshal.expects(:dump).with(property).returns(serialized_property)
     Marshal.expects(:dump).with(value).returns(serialized_value)
     Authorize::Graph::Vertex.db.expects(:hmset).with(name, serialized_property, serialized_value)
-    Authorize::Graph::Vertex.db.expects(:set).with(name + ':_', nil)
+    Authorize::Graph::Vertex.db.expects(:set).with(name + '::_', nil)
     assert_kind_of Authorize::Graph::Vertex, v = Authorize::Graph::Vertex.new(name, property => value)
   end
 
   test 'exists?' do
     name = 'name'
-    Authorize::Graph::Vertex.db.expects(:exists).with(name + ':_', nil).returns(true)
+    Authorize::Graph::Vertex.db.expects(:exists).with(name + '::_', nil).returns(true)
     assert Authorize::Graph::Vertex.exists?(name)
   end
 

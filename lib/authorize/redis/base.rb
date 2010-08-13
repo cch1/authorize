@@ -10,6 +10,7 @@ module Authorize
     #       assigning the id immediately after allocation.
     # TODO: YAML serialization (http://groups.google.com/group/comp.lang.ruby/browse_thread/thread/c855253c9d8f482e)
     class Base
+      NAMESPACE_SEPARATOR = '::'
       @base = true
       class << self
         attr_writer :db
@@ -18,12 +19,16 @@ module Authorize
         end
       end
 
+      def self.subordinate_key(*keys)
+        keys.join(NAMESPACE_SEPARATOR)
+      end
+
       def self.counter(key)
         db.incr(key)
       end
 
       def self.build_id
-        [name, counter(name)].join(':')
+        subordinate_key(name, counter(name))
       end
 
       def self.index
@@ -65,9 +70,10 @@ module Authorize
         __getobj__ == other.__getobj__
       end
 
+      # Note that requesting a counter value "steals" from the class counter.
       def subordinate_key(name, counter = false)
-        k = [id, name].join(':')
-        counter ? [k, self.class.counter(k)].join(':') : k
+        k = self.class.subordinate_key(id, name)
+        counter ? self.class.subordinate_key(k, self.class.counter(k)) : k
       end
 
       # This hook restores a re-instantianted object that has previously been initialized and then persisted.
