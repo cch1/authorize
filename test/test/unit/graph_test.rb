@@ -17,32 +17,10 @@ class GraphTest < ActiveSupport::TestCase
     assert_kind_of Authorize::Redis::Set, g0.edges
   end
 
-  test 'degenerate vertex' do
-    assert_kind_of Authorize::Graph::Vertex, v = Authorize::Graph::Vertex.new
-    Authorize::Graph::Vertex.index.clear
-    assert Authorize::Graph::Vertex.exists?(v.id)
-  end
-
-  test 'rich vertex' do
-    assert_kind_of Authorize::Graph::Vertex, v = Authorize::Graph::Vertex.new('name', :prop => :value)
-    Authorize::Graph::Vertex.index.clear
-    assert_equal :value, Authorize::Graph::Vertex.new(v.id).get(:prop)
-  end
-
-  test 'degenerate edge' do
-    v0, v1 = Authorize::Graph::Vertex.new, Authorize::Graph::Vertex.new
-    assert_kind_of Authorize::Graph::Edge, e = Authorize::Graph::Edge.new(nil, v0, v1)
-    assert_same v0, e.left
-    assert_same v1, e.right
-    Authorize::Graph::Edge.index.clear
-    assert Authorize::Graph::Edge.exists?(e.id)
-  end
-
-  test 'rich edge' do
-    v0, v1 = Authorize::Graph::Vertex.new, Authorize::Graph::Vertex.new
-    assert_kind_of Authorize::Graph::Edge, e = Authorize::Graph::Edge.new("name", v0, v1, :prop => :value)
-    Authorize::Graph::Edge.index.clear
-    assert_equal :value, Authorize::Graph::Edge.load(e.id).get(:prop)
+  test 'exists' do
+    name = 'name'
+    Authorize::Graph::Vertex.db.expects(:keys).with(name + ':*', nil).returns(true)
+    assert Authorize::Graph.exists?(name)
   end
 
   test 'add vertex' do
@@ -67,10 +45,7 @@ class GraphTest < ActiveSupport::TestCase
     v0, v1 = g0.vertex("Charlottesville"), g0.vertex("Richmond")
     assert g0.join("I64", v0, v1)
     [[v0, v1], [v1, v0]].each do |(vl, vr)|
-      assert_equal 1, vl.edges.size
-      assert_kind_of Authorize::Graph::Edge, e = vl.edges.to_a.first
-      assert_same vr, e.right
-      assert g0.edges.include?(e)
+      assert vl.neighbors.include?(vr)
     end
   end
 
