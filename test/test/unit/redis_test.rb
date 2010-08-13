@@ -15,24 +15,43 @@ class RedisTest < ActiveSupport::TestCase
     assert_equal({:a => 1, :b => 2}, Authorize::Redis::Hash.new("hash").__getobj__)
   end
 
-  test 'coherent identity from cache' do
-    assert o0 = Authorize::Redis::Value.new('xyx')
-    assert o1 = Authorize::Redis::Value.new('xyx')
-    assert_same o0, o1
+  test 'identity' do
+    assert o0 = Authorize::Redis::Value.new
+    assert o1 = Authorize::Redis::Value.new
+    assert_not_same o0, o1
+  end
+
+  test 'equality' do
+    assert o0 = Authorize::Redis::Value.new
+    o0.set('xyx')
+    assert o1 = Authorize::Redis::Value.new
+    o1.set('xyx')
+    assert_equal o0, o1
+  end
+
+  # This test ensures that different object instances mapping to the same database value(s) are
+  # considered identical in the context of membership within a collection (Hash, Set, Array, etc.).
+  test 'hash equality' do
+    assert o0 = Authorize::Redis::Value.new('A')
+    o0.set('xyx')
+    assert o1 = Authorize::Redis::Value.new('A')
+    o1.set('xyx')
+    assert o0.eql?(o1)
+    assert_equal o0.hash, o1.hash
   end
 
   uses_mocha "track initialization process" do
     test 'initialize semantics' do
       Authorize::Redis::Value.any_instance.expects(:initialize).once
-      Authorize::Redis::Value.any_instance.expects(:reloaded).never
+      Authorize::Redis::Value.any_instance.expects(:reload).never
       Authorize::Redis::Value.new('new_key')
     end
 
     test 'reload semantics' do
       Authorize::Redis::Value.db.set('x', nil)
-      Authorize::Redis::Value.any_instance.expects(:reloaded)
+      Authorize::Redis::Value.any_instance.expects(:reload)
       Authorize::Redis::Value.any_instance.expects(:initialize).never
-      assert val1 = Authorize::Redis::Value.new('x')
+      assert val1 = Authorize::Redis::Value._load('x')
     end
   end
 
@@ -45,12 +64,13 @@ class RedisTest < ActiveSupport::TestCase
     assert_equal v0, v1
   end
 
-  # Do serialized and re-hyrdrated Redis objects honor the strict coherent identity contract?
-  test 'coherency through serialization' do
+  # Do serialized and re-hyrdrated Redis objects honor the strict identity contract?
+  test 'serialization' do
     v0 = Authorize::Redis::Value.new
     v0.set("Hi Mom")
     v1 = Marshal.load(Marshal.dump(v0))
-    assert_same v0, v1
+    assert v0.eql?(v1)
+    assert_equal v0, v1
   end
 
   # Are serializable objects properly stored and retrieved?
@@ -70,7 +90,14 @@ class RedisTest < ActiveSupport::TestCase
     v0 = Authorize::Redis::Value.new
     v0.set(a)
     b = v0.__getobj__
-    assert_same a, b
+    assert a.eql?(b)
+    assert_equal a, b
+  end
+
+  test 'exist' do
+    assert !Authorize::Redis::Value.exists?('newkey')
+    Authorize::Redis::Value.new("newkey").set(1)
+    assert Authorize::Redis::Value.exists?('newkey')
   end
 
 # --Value-------------------------------------------------------------------

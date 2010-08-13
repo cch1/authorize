@@ -42,7 +42,7 @@ class GraphTest < ActiveSupport::TestCase
     v0, v1 = Authorize::Graph::Vertex.new, Authorize::Graph::Vertex.new
     assert_kind_of Authorize::Graph::Edge, e = Authorize::Graph::Edge.new("name", v0, v1, :prop => :value)
     Authorize::Graph::Edge.index.clear
-    assert_equal :value, Authorize::Graph::Edge.new(e.id).get(:prop)
+    assert_equal :value, Authorize::Graph::Edge.load(e.id).get(:prop)
   end
 
   test 'add vertex' do

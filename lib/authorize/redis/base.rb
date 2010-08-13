@@ -36,36 +36,45 @@ module Authorize
 
       def self.new(id = nil, *args, &block)
         id ||= build_id
-        index[id] ||= allocate.tap do |o|
+        index[id] = allocate.tap do |o|
           o.instance_variable_set(:@id, id)
-          if exists?(id)
-            o.send(:reloaded)
-          else
-            o.send(:initialize, *args, &block)
-          end
+          o.send(:initialize, *args, &block)
         end
       end
 
-      def self._load(id)
-        index[id] || allocate.tap do |o|
+      def self.load(id)
+        index[id] ||= allocate.tap do |o|
           o.instance_variable_set(:@id, id)
-          o.send(:reloaded)
+          o.send(:reload)
         end
       end
+      def self._load(id);load(id);end
 
       attr_reader :id
       alias to_s id
+
+      def eql?(other)
+        other.is_a?(self.class) && id.eql?(other.id)
+      end
+
+      def hash
+        id.hash
+      end
+
+      def ==(other)
+        __getobj__ == other.__getobj__
+      end
 
       def subordinate_key(name, counter = false)
         k = [id, name].join(':')
         counter ? [k, self.class.counter(k)].join(':') : k
       end
 
-      # This hook accomodates re-initializing a previously initialized object that has been persisted.
-      # It is good practice to limit re-initialization to idempotent operations.
-      def reloaded;end
+      # This hook restores a re-instantianted object that has previously been initialized and then persisted.
+      # Non-idempotent operations should be used with great care.
+      def reload;end
 
-      def _dump(depth)
+      def _dump(depth = nil)
         id
       end
 
