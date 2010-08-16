@@ -19,6 +19,12 @@ module Authorize
         end
       end
 
+      YAML.add_domain_type("hapgoods.com,2010-08-11", "") do |type, val|
+        md = /tag:(.*),([^:]*):((?:\w+)(?:::\w+)*)/.match(type)
+        domain, version, klass = *md[1..3]
+        klass.constantize.load(val)
+      end
+
       def self.subordinate_key(*keys)
         keys.join(NAMESPACE_SEPARATOR)
       end
@@ -82,6 +88,13 @@ module Authorize
 
       def _dump(depth = nil)
         id
+      end
+
+      # Emit this Redis object with a a magic type and simple scalar identifier.  The (poorly documented) "type id" format
+      # allows for a succint one-line YAML expression for a Redis instance (no indented attributes hash required) which in 
+      # turn simplifies automatic YAMLification of collections of Redis objects.  Arguably, it's more readable as well.
+      def to_yaml(opts = {})
+        YAML.quick_emit(self.id, opts) {|out| out.scalar("tag:hapgoods.com,2010-08-11:#{self.class.name}", id)}
       end
 
       # Methods that don't change the state of the object can safely delegate to a Ruby proxy object

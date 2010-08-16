@@ -13,6 +13,7 @@ class RedisTest < ActiveSupport::TestCase
     assert_equal 'x', Authorize::Redis::Value.new('x').__getobj__
     assert_equal Set[1,2], Authorize::Redis::Set.new("set").__getobj__
     assert_equal({:a => 1, :b => 2}, Authorize::Redis::Hash.new("hash").__getobj__)
+    assert_equal Set[Authorize::Redis::Value.load('x')], Authorize::Redis::Set.new("value_set").__getobj__
   end
 
   test 'identity' do
@@ -51,16 +52,35 @@ class RedisTest < ActiveSupport::TestCase
       Authorize::Redis::Value.db.set('x', nil)
       Authorize::Redis::Value.any_instance.expects(:reload)
       Authorize::Redis::Value.any_instance.expects(:initialize).never
-      assert val1 = Authorize::Redis::Value._load('x')
+      assert val1 = Authorize::Redis::Value.load('x')
     end
   end
 
-  # Can Redis objects be serialized according to conventional contracts?
-  test 'serializability' do
+  # Can Redis objects be serialized according to conventional Marshal contracts?
+  test 'serializability with Marshal' do
     v0 = Authorize::Redis::Value.new
     v0.set("Hi Mom")
     assert_instance_of String, s = Marshal.dump(v0)
     assert_instance_of Authorize::Redis::Value, v1 = Marshal.load(s)
+    assert_equal v0, v1
+  end
+
+  # Can Redis objects be serialized according to conventional YAML contracts?
+  test 'serializability with YAML' do
+    v0 = Authorize::Redis::Value.new
+    v0.set("Hi Mom")
+    assert_instance_of String, s = YAML.dump(v0)
+    assert_instance_of Authorize::Redis::Value, v1 = YAML.load(s)
+    assert_equal v0, v1
+  end
+
+  # Can Redis objects be serialized according to conventional YAML contracts?
+  test 'serializability with YAML as set' do
+    v0 = Authorize::Graph::Vertex.new
+    set0 = Set[v0]
+    assert_instance_of String, s = YAML.dump(set0)
+    assert_instance_of Set, set1 = YAML.load(s)
+    assert_instance_of Authorize::Graph::Vertex, v1 = set1.first
     assert_equal v0, v1
   end
 
