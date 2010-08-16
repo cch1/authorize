@@ -4,7 +4,7 @@ class RoleTest < ActiveSupport::TestCase
   fixtures :all
 
   def setup
-    Authorize::Redis::Value.index.clear # Clear the cache
+    Authorize::Redis::String.index.clear # Clear the cache
     Authorize::Redis::Set.index.clear
     Authorize::Redis::Hash.index.clear
     Authorize::Graph.index.clear

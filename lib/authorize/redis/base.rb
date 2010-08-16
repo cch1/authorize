@@ -114,13 +114,13 @@ module Authorize
       end
     end
 
-    class Value < Base
+    class String < Base
       def __getobj__
-        Marshal.load(self.class.db.get(id))
+        self.class.db.get(id)
       end
 
       def set(v)
-        self.class.db.set(id, Marshal.dump(v))
+        self.class.db.set(id, v)
       end
     end
 
@@ -128,16 +128,16 @@ module Authorize
       undef to_a # In older versions of Ruby, Object#to_a is invoked and #method_missing is never called.
 
       def add(v)
-        self.class.db.sadd(id, Marshal.dump(v))
+        self.class.db.sadd(id, v)
       end
       alias << add
 
       def delete(v)
-        self.class.db.sdelete(id, Marshal.dump(v))
+        self.class.db.sdelete(id, v)
       end
 
       def __getobj__
-        self.class.db.smembers(id).map{|s| Marshal.load(s)}.to_set
+        self.class.db.smembers(id).to_set
       end
     end
 
@@ -145,26 +145,23 @@ module Authorize
       undef to_a # In older versions of Ruby, Object#to_a is invoked and #method_missing is never called.
 
       def get(k)
-        Marshal.load(self.class.db.hget(id, Marshal.dump(k)))
+        self.class.db.hget(id, k)
       end
 
       def set(k, v)
-        self.class.db.hset(id, Marshal.dump(k), Marshal.dump(v))
+        self.class.db.hset(id, k, v)
       end
 
       def merge(h)
         args = h.inject([]) do |m,(k,v)|
-          m << Marshal.dump(k)
-          m << Marshal.dump(v)
+          m << k
+          m << v
         end
         self.class.db.hmset(id, *args)
       end
 
       def __getobj__
-        self.class.db.hgetall(id).inject({}) do |m, (k,v)|
-          m[Marshal.load(k)] = Marshal.load(v)
-          m
-        end
+        self.class.db.hgetall(id)
       end
     end
   end

@@ -16,8 +16,12 @@ module Authorize
         merge(properties) if properties.any?
       end
 
+      def edge_ids
+        Redis::Set.load(subordinate_key('edge_ids'))
+      end
+
       def edges
-        @edges ||= Redis::Set.load(subordinate_key('edges'))
+        edge_ids.map{|id| Edge.load(id)}.to_set
       end
 
       def neighbors
@@ -34,24 +38,23 @@ module Authorize
     # TODO: a hyperedge can be modeled with a set of vertices instead of explicit left and right vertices.
     class Edge < Authorize::Redis::Hash
       def self.exists?(id)
-        super(subordinate_key(id, 'l'))
+        super(subordinate_key(id, 'l_id'))
       end
 
       def initialize(v0, v1, properties = {})
         super()
-        self.class.db.set(subordinate_key('l'), Marshal.dump(v0))
-        self.class.db.set(subordinate_key('r'), Marshal.dump(v1))
-        v0.edges << self
+        self.class.db.set(subordinate_key('l_id'), v0.id)
+        self.class.db.set(subordinate_key('r_id'), v1.id)
+        v0.edge_ids << self.id
         merge(properties) if properties.any?
-        @l, @r = v0, v1
       end
 
       def left
-        @l ||= Marshal.load(self.class.db.get(subordinate_key('l')))
+        Vertex.load(self.class.db.get(subordinate_key('l_id')))
       end
 
       def right
-        @r ||= Marshal.load(self.class.db.get(subordinate_key('r')))
+        Vertex.load(self.class.db.get(subordinate_key('r_id')))
       end
     end
 
@@ -80,23 +83,31 @@ module Authorize
       db.keys([id, '*'].join(':'))
     end
 
+    def edge_ids
+      Redis::Set.load(subordinate_key('edge_ids'))
+    end
+
     def edges
-      @edges ||= Redis::Set.load(subordinate_key('edges'))
+      edge_ids.map{|id| Edge.load(id)}.to_set
+    end
+
+    def vertices
+      map{|id| Vertex.load(id)}.to_set
     end
 
     def vertex(id, *args)
       Vertex.new(id || subordinate_key("_vertices", true), *args).tap do |v|
-        add(v)
+        add(v.id)
       end
     end
 
     def edge(id, *args)
       Edge.new(id || subordinate_key("_edges", true), *args).tap do |e|
-        edges << e
+        edge_ids << e
       end
     end
 
-    def traverse(start = sort_by{rand}.first)
+    def traverse(start = Vertex.load(sort_by{rand}.first))
       Traverser.new(start)
     end
   end

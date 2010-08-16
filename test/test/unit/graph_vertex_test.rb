@@ -7,11 +7,8 @@ class GraphVertexTest < ActiveSupport::TestCase
 
   test 'create vertex' do
     name = 'name'
-    property, serialized_property = 'property', 'serialized property'
-    value, serialized_value = 'value', 'serialized value'
-    Marshal.expects(:dump).with(property).returns(serialized_property)
-    Marshal.expects(:dump).with(value).returns(serialized_value)
-    Authorize::Graph::Vertex.db.expects(:hmset).with(name, serialized_property, serialized_value)
+    property, value = 'property', 'value'
+    Authorize::Graph::Vertex.db.expects(:hmset).with(name, property, value)
     Authorize::Graph::Vertex.db.expects(:set).with(name + '::_', nil)
     assert_kind_of Authorize::Graph::Vertex, v = Authorize::Graph::Vertex.new(name, property => value)
   end
@@ -23,12 +20,10 @@ class GraphVertexTest < ActiveSupport::TestCase
   end
 
   test 'edges' do
-    name, edge = 'name'
-    edge, serialized_edge = 'edge', 'serialized edge'
+    name, edge, edge_id = 'name', mock('edge'), 'edge_id'
     v = Authorize::Graph::Vertex.load(name)
-    Marshal.expects(:load).with(serialized_edge).returns(edge)
-    Authorize::Graph::Vertex.db.expects(:smembers).with(v.subordinate_key('edges')).returns([serialized_edge])
-    assert_kind_of Authorize::Redis::Set, v.edges
-    assert v.edges.include?(edge)
+    Authorize::Graph::Vertex.db.expects(:smembers).with(v.subordinate_key('edge_ids')).returns(Set[edge_id])
+    Authorize::Graph::Edge.index.expects(:[]).with(edge_id).returns(edge)
+    assert_equal Set[edge], v.edges
   end
 end
