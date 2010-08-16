@@ -10,7 +10,7 @@ class RoleTest < ActiveSupport::TestCase
     Authorize::Graph.index.clear
     Authorize::Graph::Vertex.index.clear
     Authorize::Graph::Edge.index.clear
-    redis_fixtures(Authorize::Redis::Base.db, Pathname.new(fixture_path).join('redis', 'db.yml'))
+    redis_fixtures(Authorize::Redis::Base.db, Pathname.new(fixture_path).join('redis', 'role_graph.yml'))
   end
 
   test 'new global' do

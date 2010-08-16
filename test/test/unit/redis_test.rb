@@ -9,7 +9,7 @@ class RedisTest < ActiveSupport::TestCase
   end
 
   test 'fixtures' do
-    redis_fixtures(Authorize::Redis::Base.db, Pathname.new(fixture_path).join('redis', 'db.yml'))
+    redis_fixtures(Authorize::Redis::Base.db, Pathname.new(fixture_path).join('redis', 'redis.yml'))
     assert_equal 'x', Authorize::Redis::Value.new('x').__getobj__
     assert_equal Set[1,2], Authorize::Redis::Set.new("set").__getobj__
     assert_equal({:a => 1, :b => 2}, Authorize::Redis::Hash.new("hash").__getobj__)

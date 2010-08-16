@@ -1,11 +1,3 @@
-- x: x
-- list: [one, two, three]
-- set: !ruby/object:Set
-    hash: {1: true, 2: true}
-- hash: {:a: 1, :b: 2}
-- value: !hapgoods.com,2010-08-11/Authorize::Redis::Value &value x
-- value_set: !ruby/object:Set
-    hash: {*value: true}
 # Vertices (just markers)
 - <%= "Authorize::Role::vertices::#{Fixtures.identify(:user_chris)}::_" %>: ~
 - <%= "Authorize::Role::vertices::#{Fixtures.identify(:public)}::_" %>: ~
