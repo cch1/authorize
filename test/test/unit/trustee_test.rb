@@ -1,8 +1,11 @@
 require 'test_helper'
 
-
 class TrusteeTest < ActiveSupport::TestCase
   fixtures :all
+
+  def setup
+    redis_fixtures(Authorize::Redis::Base.db, Pathname.new(fixture_path).join('redis', 'role_graph.yml'))
+  end
 
   test 'has primary role' do
     assert_equal roles(:user_chris), users(:chris).primary_role
@@ -10,12 +13,14 @@ class TrusteeTest < ActiveSupport::TestCase
 
   test 'create primary role' do
     assert_difference "Authorize::Role.count" do
-      users(:alex).create_primary_role
+      assert_difference "Authorize::Role.graph.count" do
+        users(:alex).create_primary_role
+      end
     end
   end
 
   test 'has roles' do
-    assert_equal Set[roles(:user_chris)], roles = users(:chris).roles
+    assert_equal Set[roles(:user_chris), roles(:public), roles(:registered_users)], roles = users(:chris).roles
   end
 
 # ---------- Tests for deprecated functionality -----------

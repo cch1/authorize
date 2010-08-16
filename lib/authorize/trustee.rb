@@ -5,7 +5,7 @@ module Authorize
     end
 
     def roles
-      ::Set[primary_role]
+      primary_role.roles
     end
   end
 end
