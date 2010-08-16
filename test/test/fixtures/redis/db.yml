@@ -6,3 +6,32 @@
 - value: !hapgoods.com,2010-08-11/Authorize::Redis::Value &value x
 - value_set: !ruby/object:Set
     hash: {*value: true}
+# Vertices (just markers)
+- <%= "Authorize::Role::vertices::#{Fixtures.identify(:user_chris)}::_" %>: ~
+- <%= "Authorize::Role::vertices::#{Fixtures.identify(:public)}::_" %>: ~
+- <%= "Authorize::Role::vertices::#{Fixtures.identify(:registered_users)}::_" %>: ~
+# Edge counter
+- <%= "Authorize::Role::graph::_edges" %>: "10"
+# Edges
+- Authorize::Role::graph::_edges::1::l: !hapgoods.com,2010-08-11/Authorize::Graph::Vertex <%= "Authorize::Role::vertices::#{Fixtures.identify(:user_chris)}" %>
+- Authorize::Role::graph::_edges::1::r: !hapgoods.com,2010-08-11/Authorize::Graph::Vertex <%= "Authorize::Role::vertices::#{Fixtures.identify(:registered_users)}" %>
+- Authorize::Role::graph::_edges::2::l: !hapgoods.com,2010-08-11/Authorize::Graph::Vertex <%= "Authorize::Role::vertices::#{Fixtures.identify(:registered_users)}" %>
+- Authorize::Role::graph::_edges::2::r: !hapgoods.com,2010-08-11/Authorize::Graph::Vertex <%= "Authorize::Role::vertices::#{Fixtures.identify(:public)}" %>
+# Set of vertices belonging to the role graph
+- <%= "Authorize::Role::graph" %>: !ruby/object:Set
+    hash:
+      !hapgoods.com,2010-08-11/Authorize::Graph::Vertex <%= "Authorize::Role::vertices::#{Fixtures.identify(:public)}" %>: true
+      !hapgoods.com,2010-08-11/Authorize::Graph::Vertex <%= "Authorize::Role::vertices::#{Fixtures.identify(:registered_users)}" %>: true
+      !hapgoods.com,2010-08-11/Authorize::Graph::Vertex <%= "Authorize::Role::vertices::#{Fixtures.identify(:user_chris)}" %>: true
+# Set of edges belonging to the role graph
+- <%= "Authorize::Role::graph::edges" %>: !ruby/object:Set
+    hash:
+      !hapgoods.com,2010-08-11/Authorize::Graph::Edge Authorize::Role::graph::edges::1: true
+      !hapgoods.com,2010-08-11/Authorize::Graph::Edge Authorize::Role::graph::edges::2: true
+# Set of edges per vertex
+- <%= "Authorize::Role::vertices::#{Fixtures.identify(:user_chris)}::edges" %>: !ruby/object:Set
+    hash:
+      !hapgoods.com,2010-08-11/Authorize::Graph::Edge Authorize::Role::graph::_edges::1: true
+- <%= "Authorize::Role::vertices::#{Fixtures.identify(:registered_users)}::edges" %>: !ruby/object:Set
+    hash:
+      !hapgoods.com,2010-08-11/Authorize::Graph::Edge Authorize::Role::graph::_edges::2: true

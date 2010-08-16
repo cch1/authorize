@@ -5,6 +5,7 @@ class Authorize::Role < ActiveRecord::Base
   belongs_to :_resource, :polymorphic => true, :foreign_type => 'resource_type', :foreign_key => 'resource_id'
   has_many :permissions, :class_name => "Authorize::Permission", :dependent => :delete_all
   validates_uniqueness_of :name, :scope => [:resource_type, :resource_id]
+  after_save :create_vertex
 
   # This exists to simplify finding and creating global and class-level roles.  For resource instance-related
   # roles, use the standard Rails association (#roles) created for authorizable resources.
@@ -18,7 +19,16 @@ class Authorize::Role < ActiveRecord::Base
     end
     {:conditions => resource_conditions}
   }
+  named_scope :global, :conditions => {:resource_type => nil, :resource_id => nil}
   named_scope :identity, :conditions => {:name => nil}
+
+  def self.graph
+    @graph ||= Authorize::Graph.load('Authorize::Role::graph')
+  end
+
+  def create_vertex
+    self.class.graph.vertex("Authorize::Role::vertices::#{id}")
+  end
 
   # Virtual attribute that expands the common belongs_to association with a three-level hierarchy
   def resource
@@ -38,8 +48,18 @@ class Authorize::Role < ActiveRecord::Base
     (name || "%s") % resource rescue "!! INVALID ROLE NAME !!"
   end
 
+  def vertex
+    raise 'Not possible to dereference vertex for an unpersisted role' unless id
+    @vertex ||= Authorize::Graph::Vertex.load("Authorize::Role::vertices::#{id}")
+  end
+
+  def roles
+    ids = vertex.traverse.map{|v| v.id.slice(/.*::(\d+)/, 1) }
+    self.class.find(ids).to_set
+  end
+
   def children
-    raise "Not Yet Implemented"
+    roles.delete(self)
   end
 
   def parents
