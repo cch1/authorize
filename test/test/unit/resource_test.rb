@@ -8,6 +8,10 @@ class ResourceTest < ActiveSupport::TestCase
     assert_equal Set[permissions(:a_read_foo)], widgets(:foo).permissions.to_set
   end
 
+  test 'has roles as resource' do
+    assert_equal Set[roles(:user_chris)], users(:chris).roles_as_resource.to_set
+  end
+
   test 'permitted scope' do
     assert_equal Set[widgets(:foo), widgets(:bar)], Widget.permitted([roles(:a)], nil).to_set
     assert_equal Set[widgets(:bar)], Widget.permitted([roles(:d)], Authorize::Permission::Mask[:update]).to_set

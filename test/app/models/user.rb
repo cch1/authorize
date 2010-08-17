@@ -3,6 +3,7 @@ class User < ActiveRecord::Base
 
   acts_as_trustee
   authorizable_trustee
+  authorizable_resource
 
   def to_s
     login

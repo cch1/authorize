@@ -3,7 +3,7 @@ module Authorize
     def self.included(recipient)
       recipient.instance_eval do
         has_many :permissions, :class_name => "Authorize::Permission", :as => :resource, :dependent => :delete_all
-        has_many :roles, :class_name => "Authorize::Role", :as => :resource, :dependent => :delete_all
+        has_many :roles_as_resource, :class_name => "Authorize::Role", :as => :resource, :dependent => :delete_all
         reflection = reflections[:permissions]
         auth_fk = "#{reflection.quoted_table_name}.#{connection.quote_column_name(reflection.primary_key_name)}"
         resource_pk = "#{connection.quote_table_name(table_name)}.#{connection.quote_column_name(primary_key)}"
