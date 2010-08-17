@@ -7,6 +7,9 @@ module Authorize
       recipient.extend(ControllerClassMethods)
       recipient.class_eval do
         include ControllerInstanceMethods
+        helper_method :permit?
+        helper_method :permit
+        helper_method :handle_authorization_failure
       end
     end
 
@@ -53,5 +56,7 @@ module Authorize
         raise Authorize::AuthorizationError, 'You are not authorized for the requested operation.'
       end
     end
+  end
+  module HelperMethods
   end
 end
