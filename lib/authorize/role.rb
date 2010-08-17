@@ -6,6 +6,7 @@ class Authorize::Role < ActiveRecord::Base
   has_many :permissions, :class_name => "Authorize::Permission", :dependent => :delete_all
   validates_uniqueness_of :name, :scope => [:resource_type, :resource_id]
   after_save :create_vertex
+  # TODO: after_destroy to delete vertex and associated edges
 
   # This exists to simplify finding and creating global and class-level roles.  For resource instance-related
   # roles, use the standard Rails association (#roles) created for authorizable resources.

@@ -1,114 +1,70 @@
 Authorize
 =========
-authorize is a Ruby on Rails plugin providing a sophisticated Role-Based Access Control (RBAC) system.  It started as a spinoff of Bill Katz's 
-Authorization plugin, but has been substantially tested, debugged and enhanced since then.  Current functionality highlights include:
+Authorize is a Ruby on Rails plugin providing a sophisticated Role-Based Access Control (RBAC) system.  Current functionality highlights include:
 
- * Polymorphic association of ActiveRecord models as subjects.
- * Three-level (global, class, instance) authorizations over subjects.
- * Trustee identification via a flexible token system, supporting groups, "public" authorizations and proxies.
- * "Acts" to support a single ActiveRecord model being both a subject and a trustee.
- * Dynamic methods on subjects and trustees support domain-specific syntax: user.is_owner_of(widget)? and widget.is_owned_by?(user)
- * Performance-optimized Domain-Specific Language (DSL) for more sophisticated predicates (available in ActionController at controller and action level).
+ * Polymorphic association of ActiveRecord models as authorizable resources.
+ * Three-level (global, class, instance) authorizations over resources.
+ * "Acts" to support a single ActiveRecord model being both an authorizable subject and trustee.
+ * Hierarchical role tree supporting rich modelling of role assignment. 
+ * High-performance resolution of effective roles using Redis key-value database as a graph database.
 
-For more information on the theory of RBAC, see http://en.wikipedia.org/wiki/Role-based_access_control, but note that the term "subject" is used where this plugin uses the term "trustee".
+For more information on the theory of RBAC, see http://en.wikipedia.org/wiki/Role-based_access_control
 
 ----------------
+ActionPack
+The Authorize plugin extends ActionController and ActionView with the ability to check permissions and react accordingly.  There are two approaches:
+a simple boolean check (permit?) and a more sophisticated predicated block (permit) with a configurable callback.  In both cases, the method accepts
+a permissions description hash.  For example, using the boolean version:
 
-The authorize plugin extends ActionController with the ability to check permissions and react accordingly.  There are two approaches:
-a simple boolean check (permit?) and a more sophisticated predicated block (permit) with exception handling.  In both cases, the method accepts
-a permissions description string expressed in a domain-specific language.  The simplest version of this language is just the name of the required 
-global/generic role.  For example, using the boolean version:
+	permit?(:update => widget)
 
-	permit? "adminstrator"
+More complex expressions typically involve checking for permissions to multiple model instances.  The following predicate, for example,
+is true if the current roles include the :all permission over foo OR the :read permission over bar:
 
-More complex expressions typically involve requiring a particular role over a particular model instance.  For example:
+	permit?({:all => foo, :read => bar})  
 
-	permit? "owner of :widget"  
+Clean hooks are available for identifying the appropriate roles for the current request.  No "User" class is assumed, only a
+ApplicationController#roles method that returns an enumeration of the roles for the current request.  A simple implementation might
+work something like this:
 
-Clean hooks are available for identifying the appropriate authorization tokens for the current request.  No "User" class is assumed, no "current_user"
-method is required.
+	class ApplicationController << ActionController::Base
+	  def roles
+	    User.current.role.roles
+	  end
+	end
 
-The authorize plugin extends ActiveRecord with two methods: acts_as_subject and acts_as_trustee.  A given model may invoke
-either or both, depending on requirements.  The follow narrative shows the methods added to models for management of 
-role-based authorization.
- 
-ActiveRecord-provided associations (see AR documentation for complete list of related methods)
-  Trustee (User or Group, for example)
-    authorizations
-          Returns array of authorizations belonging to trustee
-          Deprecated equivalent: roles
-    subjected_<subjected_models>   # Note the use of the plural model name
-          Returns authorized model objects
-          Not yet implemented
-  Subject (Widget, for example)
-    subjections  # Synonym for authorizations -must be distinct to permit model as both trustee and subject.
-          Returns array of authorizations over acts_as_subject objects.
-          Deprecated equivalent: accepted_roles
-    authorized_<trustee_models>
-          Returns array of trustees with an authorization over the acts_as_subject object.
-          Not yet implemented
-  Authorization
-    trustee
-          Returns the authorized trustee
-    subject
-          Returns the object of the authorization
-    subjected_<subjected_model>     # Note the use of the singular model name
-          Returns subjected model object of named class.  NB: This association is only safe with UUID-keyed models!
-          Disabled
-    authorized_<authorized_model>      # Note the use of the singular model name
-          Returns authorized trustee object of named class.  NB: This association is only safe with UUID-keyed trustees!
-          Disabled
-Standard plugin methods:
-  Trustee
-    authorize <Role>, <Subject Instance or Class>
-          Creates an authorization for the trustee as <Role> over the subject Instance or Class.  If neither an instance nor a class is specified,
-          the trustee is granted a generic/global authorization.
-    unauthorize <Role>, <Subject Instance or Class>
-          Removes any authorization for the trustee as <Role> over the subject Instance or Class.  Leave off the instance or class to remove a
-          generic authorization.
-    authorized? <Role>, <Subject Instance or Class>
-          Boolean condition for the trustee being authorized as the <Role> over the subject Instance or Class.  Leave off the instance or class to
-          check for a generic/global authorization.
-  Subject (Authorizable Class or Instance)
-    subject <Role>, <Trustee>
-          Subjects the model instance or class to the authority of trustee as the named role.
-    unsubject <Role>, <Trustee>
-          Removes any authorization for the trustee as the named role over the model instance or class
-    subjected? <Role>, <Trustee>
-          Boolean condition for the the model Instance or Class being subjected to the authority of trustee as the named role.
-Identity Mixin methods:
-  Trustee
-    is_<Role>_for_what
-          Returns array of subjects for which trustee as <Role> is authorized
-    is_<Role>_<Preposition>?(<Authorizable object>)
-          Boolean condition for trustee as <Role> being authorized for the specified subject.
-    is_<Role>[_<Preposition> <Authorizable object>]
-          Creates authorization for trustee as <Role> either generically or over the specified subject (model or class)
-    is_<Role>
-          Creates generic authorization to trustee as <Role>
-  Subject
-    has_<Role>
-          Returns array of trustees having specified role over the subject.
-    has_<Role>?
-          Boolean conditioned upon at least one trustee having <Role> over the subject.
-          
 ----------------
+ActiveRecord
+The Authorize plugin extends ActiveRecord with two methods: authorizable_resource and authorizable_trustee.  A given model may invoke
+either or both, depending on requirements.  Models are thus extended with additional capabilities as follows:
 
-A Note on Authoriztion Tokens
+Trustee
+A #role association is defined that links a trustee to a "primary" or "identity" role (Authorize::Role).  This role serves as the entry
+point for traversing the role hierarchy and determining the effective set of roles (identity role plus its children) for a given trustee.
 
-Authorization Tokens are the key to an authorization.  Consequently, they support a security model based on something virtually possessed by the user
-rather than simply an attribute of the user.  How a user accumulates authorization tokens is up to you.  Here are some ideas:
+Resource
+A #permissions association is defined that links a resource to the set of permissions (Authorize::Permission) that define the available
+access modes to the resource.
 
-	1. Create a "Public" token and persist it with the application configuration.  In a before_filter, accumulate this token (probably the first one).
-	2. Create a token for each user and persist it in his user model instance.  When he authenticates, accumulate his token.
-	3. Allow a user to affiliate with groups that also have a persisted token.  When membership is ascertained, accumulate the group token.
-	4. Create a shared secret token on and display it to the "owner".  Provide a page where any user can prove he shares the secret by entering 
-	   the token, which can be a simple Authorization.find_by_token(), and accumulate the token.  Note that allowing users to grab tokens like this
-	   can be a security risk if "private" tokens can be guessed.  Resolve the problem by using hashs as tokens.  Shared secret tokens are in fact a
-	   hash of the true shared secret (which can be a user selected phrase, a bubblebabble, etc.) while private tokens are a hash of a random
-	   discarded value.  Then, in theory, private tokens can only be accessed by guessing the discarded random value or by looking up the actual
-	   token on the user model instance.
+In addition to the macro methods described above, two ActiveRecord::Base subclasses are defined:
 
+Authorize::Permission
+Permissions link roles to resources along with a defined access mode.  Access modes are limited to the classics (read, update, delete, etc.),
+but interpretation of them is application-specific (but see the note below about the list mode).  Permissions apply to resources at one of
+three levels:
+
+	Instance (e.g. update permission for the Widget instance with id 6324)
+	Class (e.g. list permission for all instances of Widget)
+	Global (e.g. read permission for all instances of every model class)
+
+NOTE: To maximize performance, the list access mode is assumed to be included in EVERY instance of Authorize::Permission.  This allows
+efficient SQL joins with model tables (widgets, for example) and the permissions table (authorize_permissions).  The permissions table
+can grow quite large, and this implied mode obviates the need to index the mask field and add complex conditions to permissions queries.  
+	
+Authorize::Role
+Roles allow flexible modelling of application-specific functions.  The Role class is rather thin and mainly serves to identify a role
+instance and polymorphically associate it, where appropriate, to a trustee.  Critically, it has the sole interface (#roles) into the 
+role graph (a DAG) stored in the Redis database. 
 ----------------
 
 A Note on Performance
@@ -125,27 +81,27 @@ Indexing of the authorization table is very important.  See the test application
 Code examples of alternatives:
 
           # Baseline with nested booleans
-          c1 = Authorization.sanitize_sql_hash_for_conditions(:subject_type => nil)
-          c2 = Authorization.sanitize_sql_hash_for_conditions(:subject_type => base_class.name)
+          c1 = Authorize::Permission.sanitize_sql_hash_for_conditions(:subject_type => nil)
+          c2 = Authorize::Permission.sanitize_sql_hash_for_conditions(:subject_type => base_class.name)
           c3l = "%s.%s" % [reflection.quoted_table_name, connection.quote_column_name(reflection.primary_key_name)]
           c3r = "%s.%s" % [connection.quote_table_name(table_name), connection.quote_column_name(primary_key)]
-          c4 = Authorization.sanitize_sql_hash_for_conditions(:subject_id => nil)
+          c4 = Authorize::Permission.sanitize_sql_hash_for_conditions(:subject_id => nil)
           subject_condition_clause = "#{c1} OR (#{c2} AND (#{c3l} = #{c3r} OR #{c4}))"
           named_scope :a0, lambda {|tokens, roles|
-            scope = Authorization.scoped(:conditions => subject_condition_clause).with(tokens).as(roles)
+            scope = Authorize::Permission.scoped(:conditions => subject_condition_clause).with(tokens).as(roles)
             c = scope.construct_finder_sql({:select => 1, :from => "#{reflection.quoted_table_name} a"}).gsub(/#{reflection.quoted_table_name}\./, 'a.')
             {:conditions => "EXISTS (%s)" % c}
           }
 
           # Baseline with booleans expanded into three ORs
-          c1 = Authorization.sanitize_sql_hash_for_conditions(:subject_type => nil)
-          c2 = Authorization.sanitize_sql_hash_for_conditions(:subject_type => base_class.name)
+          c1 = Authorize::Permission.sanitize_sql_hash_for_conditions(:subject_type => nil)
+          c2 = Authorize::Permission.sanitize_sql_hash_for_conditions(:subject_type => base_class.name)
           c3l = "%s.%s" % [reflection.quoted_table_name, connection.quote_column_name(reflection.primary_key_name)]
           c3r = "%s.%s" % [connection.quote_table_name(table_name), connection.quote_column_name(primary_key)]
-          c4 = Authorization.sanitize_sql_hash_for_conditions(:subject_id => nil)
+          c4 = Authorize::Permission.sanitize_sql_hash_for_conditions(:subject_id => nil)
           subject_condition_clause = "#{c1} OR (#{c2} AND #{c3l} = #{c3r}) OR (#{c1} AND #{c4})"
           named_scope :a1, lambda {|tokens, roles|
-            scope = Authorization.scoped(:conditions => subject_condition_clause).with(tokens).as(roles)
+            scope = Authorize::Permission.scoped(:conditions => subject_condition_clause).with(tokens).as(roles)
             c = scope.construct_finder_sql({:select => 1, :from => "#{reflection.quoted_table_name} a"}).gsub(/#{reflection.quoted_table_name}\./, 'a.')
             {:conditions => "EXISTS (%s)" % c}
           }
@@ -153,10 +109,10 @@ Code examples of alternatives:
           # COALESCE replacing OR (and a subtle but harmless semantic shift)
           auth_fk = "#{reflection.quoted_table_name}.#{connection.quote_column_name(reflection.primary_key_name)}"
           subject_pk = "#{connection.quote_table_name(table_name)}.#{connection.quote_column_name(primary_key)}"
-          auth_fk_type = "#{reflection.quoted_table_name}.#{connection.quote_column_name(Authorization.reflections[:subject].options[:foreign_type])}"
+          auth_fk_type = "#{reflection.quoted_table_name}.#{connection.quote_column_name(Authorize::Permission.reflections[:subject].options[:foreign_type])}"
           subject_condition_clause = "%s = COALESCE(#{auth_fk_type}, %s) AND #{subject_pk} = COALESCE(#{auth_fk}, #{subject_pk})" % ([connection.quote(base_class.name)] * 2)
           named_scope :a2, lambda {|tokens, roles|
-            scope = Authorization.scoped(:conditions => subject_condition_clause).with(tokens).as(roles)
+            scope = Authorize::Permission.scoped(:conditions => subject_condition_clause).with(tokens).as(roles)
             c = scope.construct_finder_sql({:select => 1, :from => "#{reflection.quoted_table_name} a"}).gsub(/#{reflection.quoted_table_name}\./, 'a.')
             {:conditions => "EXISTS (%s)" % c}
           }
@@ -164,11 +120,11 @@ Code examples of alternatives:
           # Correlated subquery with COALESCE
           auth_fk = "#{reflection.quoted_table_name}.#{connection.quote_column_name(reflection.primary_key_name)}"
           subject_pk = "#{connection.quote_table_name(table_name)}.#{connection.quote_column_name(primary_key)}"
-          auth_fk_type = "#{reflection.quoted_table_name}.#{connection.quote_column_name(Authorization.reflections[:subject].options[:foreign_type])}"
+          auth_fk_type = "#{reflection.quoted_table_name}.#{connection.quote_column_name(Authorize::Permission.reflections[:subject].options[:foreign_type])}"
           subject_condition_clause = "%s = COALESCE(#{auth_fk_type}, %s)" % ([connection.quote(base_class.name)] * 2)
           select_clause = "COALESCE(#{auth_fk}, #{subject_pk})"
           named_scope :a3, lambda {|tokens, roles|
-            scope = Authorization.scoped(:conditions => subject_condition_clause).with(tokens).as(roles)
+            scope = Authorize::Permission.scoped(:conditions => subject_condition_clause).with(tokens).as(roles)
             c = scope.construct_finder_sql({:select => select_clause})
             {:conditions => "#{subject_pk} IN (#{c})"}
           }
@@ -177,7 +133,7 @@ Code examples of alternatives:
           auth_fk = "#{reflection.quoted_table_name}.#{connection.quote_column_name(reflection.primary_key_name)}"
           subject_pk = "#{connection.quote_table_name(table_name)}.#{connection.quote_column_name(primary_key)}"
           named_scope :a4, lambda {|tokens, roles|
-            scope = Authorization.with(tokens).as(roles)
+            scope = Authorize::Permission.with(tokens).as(roles)
             sq0 = scope.construct_finder_sql({:select => true, :conditions => {:subject_id => nil, :subject_type => nil}})
             sq1 = scope.construct_finder_sql({:select => true, :conditions => {:subject_type => base_class.name, :subject_id => nil}})
             sq2 = scope.scoped(:conditions => "#{auth_fk} = #{subject_pk}").construct_finder_sql({:select => true, :conditions => {:subject_type => base_class.name}})
@@ -187,9 +143,13 @@ Code examples of alternatives:
           # Join - possible to get nice performance, but semantics collapse
           auth_fk = "#{reflection.quoted_table_name}.#{connection.quote_column_name(reflection.primary_key_name)}"
           subject_pk = "#{connection.quote_table_name(table_name)}.#{connection.quote_column_name(primary_key)}"
-          auth_fk_type = "#{reflection.quoted_table_name}.#{connection.quote_column_name(Authorization.reflections[:subject].options[:foreign_type])}"
+          auth_fk_type = "#{reflection.quoted_table_name}.#{connection.quote_column_name(Authorize::Permission.reflections[:subject].options[:foreign_type])}"
           subject_condition_clause = "%s = COALESCE(#{auth_fk_type}, %s) AND #{subject_pk} = COALESCE(#{auth_fk}, #{subject_pk})" % ([connection.quote(base_class.name)] * 2)
           named_scope :a9, lambda {|tokens, roles|
-            ascope = Authorization.with(tokens).as(roles).current_scoped_methods[:find][:conditions]
+            ascope = Authorize::Permission.with(tokens).as(roles).current_scoped_methods[:find][:conditions]
             {:joins => "JOIN authorizations ON #{subject_condition_clause}", :conditions => {:authorizations => ascope}}
           }
+
+TODO:
+ * Flexible configuration of permission bits
+ 

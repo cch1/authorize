@@ -1,6 +1,5 @@
-require 'authorize/base'
 require 'authorize/exceptions'
 
-ActionController::Base.send(:include, Authorize::Base)
-ActiveRecord::Base.send(:include, Authorize::AuthorizationsTable::TrusteeExtensions, Authorize::AuthorizationsTable::SubjectExtensions)
-ActionView::Base.send(:include, Authorize::HelperMethods)
+ActiveRecord::Base.send(:include, Authorize::ActiveRecord)
+ActionController::Base.send(:include, Authorize::ActionController)
+ActionView::Base.send(:include, Authorize::ActionView)

@@ -1,0 +1,57 @@
+module Authorize
+  module ActionController
+    def self.included(recipient)
+      if recipient.respond_to?(:rescue_responses)
+        recipient.rescue_responses['Authorize::AuthorizationError'] = :forbidden
+      end
+      recipient.extend(ClassMethods)
+      recipient.class_eval do
+        include InstanceMethods
+        helper_method :permit?
+        helper_method :permit
+        helper_method :handle_authorization_failure
+      end
+    end
+
+    module ClassMethods
+      # Allow action-level authorization check with an appended before_filter.
+      def permit(authorization_expression, options = {})
+        auth_options = options.slice!(:only, :except)
+        append_before_filter(options) do |controller|
+          controller.permit(authorization_expression, auth_options)
+        end
+      end
+    end
+
+    module InstanceMethods
+      # Simple predicate for authorization.
+      def permit?(authorization_hash, options = {})
+        authorization_hash.any? do |(bits, resource)|
+          permitted_mask = Authorize::Permission::Mask[bits]
+          effective_mask = Authorize::Permission.effective_mask(resource, options[:roles] || self.roles) 
+          permitted_mask.subset?(effective_mask)
+        end
+      end
+
+      # Allow method-level authorization checks.
+      # permit (without a trailing question mark) invokes the callback "handle_authorization_failure" by default.
+      # Specify :callback => false to turn off callbacks.
+      def permit(authorization_hash, options = {})
+        options = {:callback => :handle_authorization_failure}.merge(options)
+        callback = options.delete(:callback)
+        if permit?(authorization_hash, options)
+          yield if block_given?
+        else
+          send(callback) if callback
+        end
+      end
+
+      private
+      # Handle authorization failure within permit.  Override this callback in your ApplicationController
+      # for custom behavior.  This method typically returns the value for the around_filter
+      def handle_authorization_failure
+        raise Authorize::AuthorizationError, 'You are not authorized for the requested operation.'
+      end
+    end
+  end
+end

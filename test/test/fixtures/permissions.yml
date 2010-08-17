@@ -21,3 +21,7 @@ e_delete_bar:
   mask: <%= Authorize::Permission::Mask[:delete].to_i %>
   role: e
   _resource: bar (Widget)
+user_chris_all_chris:
+  mask: <%= Authorize::Permission::Mask[:all].to_i %>
+  role: user_chris
+  _resource: chris (User)

@@ -1,20 +1,13 @@
 require 'singleton'
 
+# This is an example of a non-ActiveRecord trustee
 class Public
-  include Authorize::AuthorizationsTable::TrusteeExtensions
   include Singleton
-  TOKEN = 'a' * Authorization.columns_hash['token'].limit
 
-  acts_as_trustee(false)
+  def role
+    Authorize::Role.find_by_name('Public')
+  end
 
-  def authorization_token
-    TOKEN
-  end
-  
-  def permissions
-    Authorization.with(TOKEN)
-  end
-  
   def to_s
     "Public"
   end
