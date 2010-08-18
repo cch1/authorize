@@ -64,6 +64,12 @@ class Authorize::Role < ActiveRecord::Base
     p.mask.complete
   end
 
+  def can?(*args)
+    return false unless p = permissions.for(args.pop).first
+    mask = Authorize::Permission::Mask[*args].complete
+    mask.subset?(p.mask)
+  end
+
   def to_s
     (name || "%s") % resource rescue "!! INVALID ROLE NAME !!"
   end

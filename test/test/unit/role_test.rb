@@ -80,6 +80,12 @@ class RoleTest < ActiveSupport::TestCase
     assert Authorize::Permission.effective(widgets(:foo), [roles(:e)]).empty?
   end
 
+  test 'can predicate' do
+    assert roles(:c).can?(:read, Widget)
+    assert !roles(:c).can?(:read, User)
+    assert roles(:user_chris).can?(:all, users(:chris))
+  end
+
   test 'stringify' do
     assert_kind_of String, roles(:administrator).to_s
     assert_kind_of String, roles(:c).to_s
