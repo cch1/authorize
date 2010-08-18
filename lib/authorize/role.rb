@@ -45,6 +45,27 @@ class Authorize::Role < ActiveRecord::Base
     return self[:resource_type] = res.to_s
   end
 
+  # Creates or updates the unique permission for a given resource to have the given modes
+  # Example:  public.can(:list, :read, widget)
+  def can(*args)
+    res = args.pop
+    p = permissions.find_or_initialize_by_resource_type_and_resource_id(res.class.name, res.id)
+    p.mask += Authorize::Permission::Mask[*args]
+    p.save
+    p.mask.complete
+  end
+
+  # Updates or deletes the unique permission for a given resource to not have the given modes
+  # Example:  public.cannot(:update, widget)
+  def cannot(*args)
+    res = args.pop
+    p = permissions.find_by_resource_type_and_resource_id(res.class.name, res.id)
+    return Authorize::Permission::Mask[] unless p
+    p.mask -= Authorize::Permission::Mask[*args].complete
+    p.mask.empty? ? p.destroy : p.save
+    p.mask.complete
+  end
+
   def to_s
     (name || "%s") % resource rescue "!! INVALID ROLE NAME !!"
   end

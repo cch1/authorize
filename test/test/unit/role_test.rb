@@ -22,7 +22,7 @@ class RoleTest < ActiveSupport::TestCase
     assert r = Authorize::Role.new(:name => 'friend of %s', :_resource => users(:chris))
     assert r.valid?
   end
-  
+
   test 'create' do
     Authorize::Graph.db.expects(:set).with(regexp_matches(/Authorize::Role::vertices::\d*::_/), nil).returns(true)
     assert_difference 'Authorize::Role.count' do
@@ -43,6 +43,34 @@ class RoleTest < ActiveSupport::TestCase
 
   test 'has permissions' do
     assert_equal Set[permissions(:b_overlord)], roles(:administrator).permissions.to_set
+  end
+
+  test 'can adds modes to existing permission' do
+    p = permissions(:e_delete_bar)
+    mask = p.mask + [:update]
+    assert_equal mask, roles(:e).can(:update, widgets(:bar))
+    assert p.reload.mask.include?(:update)
+  end
+
+  test 'cannot removes modes from existing permission' do
+    p = permissions(:e_delete_bar)
+    mask = p.mask - [:delete]
+    assert_equal mask , roles(:e).cannot(:delete, widgets(:bar))
+    assert !p.reload.mask.include?(:update)
+  end
+
+  test 'can inserts permission as required' do
+    assert_difference "Authorize::Permission.count", 1 do
+      assert_equal Set[:list, :update], roles(:e).can(:update, widgets(:foo))
+    end
+    assert !Authorize::Permission.effective(widgets(:foo), [roles(:e)]).empty?
+  end
+
+  test 'cannot deletes permission as required' do
+    assert_difference "Authorize::Permission.count", -1 do
+      assert_equal Set[], roles(:e).cannot(:all, widgets(:bar))
+    end
+    assert Authorize::Permission.effective(widgets(:bar), [roles(:e)]).empty?
   end
 
   test 'stringify' do
