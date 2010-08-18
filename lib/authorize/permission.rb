@@ -2,7 +2,7 @@ require 'authorize/bitmask'
 
 class Authorize::Permission < ActiveRecord::Base
   class Mask < Authorize::Bitmask
-    self.name_values = {:list => 0, :read => 2, :update => 4, :delete => 8, :add => 16, :remove => 32, :manage => 64, :all => 126}
+    self.name_values = {:list => 1, :read => 2, :update => 4, :delete => 8, :add => 16, :remove => 32, :manage => 64, :all => 127}
   end
 
   set_table_name 'authorize_permissions'
@@ -14,6 +14,8 @@ class Authorize::Permission < ActiveRecord::Base
   belongs_to :role, :class_name => "Authorize::Role"
   validates_presence_of :role
   validates_presence_of :resource
+
+  before_save :set_mandatory_list_mode
 
   # Returns the explicit authorizations over a subject. The resource can be any one of the following
   #   Object                global permissions are returned
@@ -59,6 +61,12 @@ class Authorize::Permission < ActiveRecord::Base
   # Find the effective permission mask over a given resource for a given set of role_ids
   def self.effective_mask(*args)
     effective(*args).inject(Mask.new){|memo, p| memo.merge(p.mask)}.complete
+  end
+
+  # Because the list mode is always assumed to be set for performance, we expose that assumption explicitly.
+  def set_mandatory_list_mode
+    self['mask'] |= Mask.name_values[:list]
+    @attributes_cache.delete('mask')
   end
 
   # Virtual attribute that expands the common belongs_to association with a three-level hierarchy

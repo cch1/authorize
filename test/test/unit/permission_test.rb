@@ -4,9 +4,8 @@ class PermissionTest < ActiveSupport::TestCase
   fixtures :all
 
   test 'create' do
-    p = Authorize::Permission.create(:role => roles(:user_chris), :resource => widgets(:bar), :mask => 2)
+    p = Authorize::Permission.create(:role => roles(:user_chris), :resource => widgets(:bar))
     assert p.valid?, p.errors.full_messages
-    assert_equal Set.new([:list, :read]), p.reload.mask
   end
 
   test 'resource reader' do
@@ -64,7 +63,7 @@ class PermissionTest < ActiveSupport::TestCase
     p = permissions(:a_read_foo)
     p.mask # trigger cache
     p.mask = Authorize::Permission::Mask[:delete]
-    assert_equal Set[:list, :delete], p.mask
+    assert_equal Set[:delete], p.mask
     assert p.mask_changed?
   end
 
@@ -72,7 +71,7 @@ class PermissionTest < ActiveSupport::TestCase
     p = permissions(:a_read_foo)
     p.mask # trigger cache
     p.mask = 8
-    assert_equal Set[:list, :delete], p.mask
+    assert_equal Set[:delete], p.mask
     assert p.mask_changed?
   end
 
@@ -99,24 +98,25 @@ class PermissionTest < ActiveSupport::TestCase
     assert_equal Set[permissions(:b_overlord), permissions(:c_all_widgets), permissions(:a_read_foo)], Authorize::Permission.over(widgets(:foo)).to_set
   end
 
-#  test 'should restrict to authorized scope' do
-#    assert_equal 2, Permission.authorized(users(:chris).authorization_role_id, nil).count
-#    assert_equal 1, Permission.authorized(users(:pascale).authorization_role_id, nil).count
-#  end
-#
-#  test 'should restrict to authorized scope including generic permissions' do
-#    assert_equal 4, Permission.authorized(users(:chris).authorization_role_id, 'overlord').count
-#  end
-#
-#  test 'should restrict to authorized scope including class permissions' do
-#    assert_equal 3, Permission.authorized(users(:alex).authorization_role_id, 'overlord').count
-#  end
-
   test 'effective permissions' do
     assert_equal Set[permissions(:d_update_bar), permissions(:e_delete_bar)], Authorize::Permission.effective(widgets(:bar), Set[roles(:d), roles(:e)]).to_set
   end
 
   test 'effective permission mask' do
     assert_equal Authorize::Permission::Mask[:list, :read, :update, :delete], Authorize::Permission.effective_mask(widgets(:bar), Set[roles(:d), roles(:e)])
+  end
+
+  test 'effective permission mask for no permissions' do
+    assert_equal Authorize::Permission::Mask[], Authorize::Permission.effective_mask(widgets(:bar), Set[])
+  end
+
+  test 'default includes list mode' do
+    assert_equal Authorize::Permission::Mask[:list], Authorize::Permission.new.mask
+  end
+
+  test 'list mode enforced on save' do
+    p = permissions(:d_update_bar)
+    p.update_attributes(:mask => Authorize::Permission::Mask[])
+    assert_equal Authorize::Permission::Mask[:list], p.reload.mask
   end
 end

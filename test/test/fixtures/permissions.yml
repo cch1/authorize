@@ -1,5 +1,5 @@
 a_read_foo:
-  mask: <%= Authorize::Permission::Mask[:read].to_i %>
+  mask: <%= Authorize::Permission::Mask[:list, :read].to_i %>
   role: a
   _resource: foo (Widget)
 a_list_bar:
@@ -18,7 +18,7 @@ d_update_bar:
   role: d
   _resource: bar (Widget)
 e_delete_bar:
-  mask: <%= Authorize::Permission::Mask[:delete].to_i %>
+  mask: <%= Authorize::Permission::Mask[:list, :delete].to_i %>
   role: e
   _resource: bar (Widget)
 user_chris_all_chris:
