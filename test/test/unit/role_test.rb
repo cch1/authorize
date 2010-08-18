@@ -73,6 +73,13 @@ class RoleTest < ActiveSupport::TestCase
     assert Authorize::Permission.effective(widgets(:bar), [roles(:e)]).empty?
   end
 
+  test 'cannot does nothing as required' do
+    assert_no_difference "Authorize::Permission.count" do
+      assert_equal Set[], roles(:e).cannot(:all, widgets(:foo))
+    end
+    assert Authorize::Permission.effective(widgets(:foo), [roles(:e)]).empty?
+  end
+
   test 'stringify' do
     assert_kind_of String, roles(:administrator).to_s
     assert_kind_of String, roles(:c).to_s
