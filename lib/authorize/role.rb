@@ -45,6 +45,11 @@ class Authorize::Role < ActiveRecord::Base
     return self[:resource_type] = res.to_s
   end
 
+  # Link from this role's vertex to other's vertex in the system role graph.  This role becomes the parent.
+  def link(other)
+    self.class.graph.edge(nil, vertex, other.vertex)
+  end
+
   # Creates or updates the unique permission for a given resource to have the given modes
   # Example:  public.can(:list, :read, widget)
   def can(*args)

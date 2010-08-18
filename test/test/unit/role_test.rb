@@ -99,4 +99,10 @@ class RoleTest < ActiveSupport::TestCase
   test 'child roles' do
     assert_equal Set[roles(:registered_users), roles(:public)], roles(:user_chris).children
   end
+
+  test 'link' do
+    assert !roles(:user_chris).children.include?(roles(:administrator))
+    assert roles(:user_chris).link(roles(:administrator))
+    assert roles(:user_chris).children.include?(roles(:administrator))
+  end
 end
