@@ -6,7 +6,7 @@ class ControllerTest < ActionController::TestCase
   tests WidgetsController
 
   def setup
-    redis_fixtures(Authorize::Redis::Base.db, Pathname.new(fixture_path).join('redis', 'role_graph.yml'))
+    Authorize::Redis::Fixtures.load(Authorize::Redis::Base.db, Pathname.new(fixture_path).join('redis', 'role_graph.yml'))
   end
 
   test 'predicate not stuck on false when permitted' do

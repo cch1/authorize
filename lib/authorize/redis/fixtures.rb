@@ -16,6 +16,8 @@ module Authorize
           end
         end
       end
+      alias load redis_fixtures
+      module_function :load
     end
   end
 end
