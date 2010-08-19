@@ -51,8 +51,8 @@ class Authorize::Role < ActiveRecord::Base
   end
 
   # Creates or updates the unique permission for a given resource to have the given modes
-  # Example:  public.can(:list, :read, widget)
-  def can(*args)
+  # Example:  public.may(:list, :read, widget)
+  def may(*args)
     p = permissions.for(args.pop).find_or_initialize_by_role_id(id) # need a #find_or_initialize_by_already_specified_scope
     p.mask += Authorize::Permission::Mask[*args]
     p.save
@@ -60,8 +60,8 @@ class Authorize::Role < ActiveRecord::Base
   end
 
   # Updates or deletes the unique permission for a given resource to not have the given modes
-  # Example:  public.cannot(:update, widget)
-  def cannot(*args)
+  # Example:  public.may_not(:update, widget)
+  def may_not(*args)
     p = permissions.for(args.pop).first
     return Authorize::Permission::Mask[] unless p
     p.mask -= Authorize::Permission::Mask[*args].complete
@@ -69,10 +69,18 @@ class Authorize::Role < ActiveRecord::Base
     p.mask.complete
   end
 
-  def can?(*args)
+  # Test if all given modes are permitted for the given resource
+  def may?(*args)
     return false unless p = permissions.for(args.pop).first
     mask = Authorize::Permission::Mask[*args].complete
     mask.subset?(p.mask)
+  end
+
+  # Test if none of the given modes are permitted for the given resource
+  def may_not?(*args)
+    return true unless p = permissions.for(args.pop).first
+    mask = Authorize::Permission::Mask[*args].complete
+    (mask & p.mask).empty?
   end
 
   def to_s

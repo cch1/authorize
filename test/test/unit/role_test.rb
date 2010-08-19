@@ -45,45 +45,51 @@ class RoleTest < ActiveSupport::TestCase
     assert_equal Set[permissions(:b_overlord)], roles(:administrator).permissions.to_set
   end
 
-  test 'can adds modes to existing permission' do
+  test 'may adds modes to existing permission' do
     p = permissions(:e_delete_bar)
     mask = p.mask + [:update]
-    assert_equal mask, roles(:e).can(:update, widgets(:bar))
+    assert_equal mask, roles(:e).may(:update, widgets(:bar))
     assert p.reload.mask.include?(:update)
   end
 
-  test 'cannot removes modes from existing permission' do
+  test 'may_not removes modes from existing permission' do
     p = permissions(:e_delete_bar)
     mask = p.mask - [:delete]
-    assert_equal mask , roles(:e).cannot(:delete, widgets(:bar))
+    assert_equal mask , roles(:e).may_not(:delete, widgets(:bar))
     assert !p.reload.mask.include?(:update)
   end
 
-  test 'can inserts permission as required' do
+  test 'may inserts permission as required' do
     assert_difference "Authorize::Permission.count", 1 do
-      assert_equal Set[:list, :update], roles(:e).can(:update, widgets(:foo))
+      assert_equal Set[:list, :update], roles(:e).may(:update, widgets(:foo))
     end
     assert !Authorize::Permission.effective(widgets(:foo), [roles(:e)]).empty?
   end
 
-  test 'cannot deletes permission as required' do
+  test 'may_not deletes permission as required' do
     assert_difference "Authorize::Permission.count", -1 do
-      assert_equal Set[], roles(:e).cannot(:all, widgets(:bar))
+      assert_equal Set[], roles(:e).may_not(:all, widgets(:bar))
     end
     assert Authorize::Permission.effective(widgets(:bar), [roles(:e)]).empty?
   end
 
-  test 'cannot does nothing as required' do
+  test 'may_not does nothing as required' do
     assert_no_difference "Authorize::Permission.count" do
-      assert_equal Set[], roles(:e).cannot(:all, widgets(:foo))
+      assert_equal Set[], roles(:e).may_not(:all, widgets(:foo))
     end
     assert Authorize::Permission.effective(widgets(:foo), [roles(:e)]).empty?
   end
 
-  test 'can predicate' do
-    assert roles(:c).can?(:read, Widget)
-    assert !roles(:c).can?(:read, User)
-    assert roles(:user_chris).can?(:all, users(:chris))
+  test 'may predicate' do
+    assert roles(:c).may?(:read, Widget)
+    assert !roles(:c).may?(:read, User)
+    assert roles(:user_chris).may?(:all, users(:chris))
+  end
+
+  test 'may_not predicate' do
+    assert roles(:c).may_not?(:read, User)
+    assert !roles(:c).may_not?(:read, Widget)
+    assert roles(:user_chris).may_not?(:all, users(:alex))
   end
 
   test 'stringify' do
