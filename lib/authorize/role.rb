@@ -32,17 +32,24 @@ class Authorize::Role < ActiveRecord::Base
   end
 
   # Virtual attribute that expands the common belongs_to association with a three-level hierarchy
+  # OPTIMIZE: revert this to a standard belongs_to association -do we really need the hierarchy here?
   def resource
     return Object unless resource_type
     return resource_type.constantize unless resource_id
     return _resource
   end
+  alias identity resource
 
   def resource=(res)
     return self._resource = res unless res.kind_of?(Class)
     self.resource_id = nil
     return self[:resource_type] = nil if res == Object
     return self[:resource_type] = res.to_s
+  end
+  alias identity= resource
+
+  def nymous?
+    _resource.nil?
   end
 
   # Link from this role's vertex to other's vertex in the system role graph.  This role becomes the parent.

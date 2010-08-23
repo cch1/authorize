@@ -35,6 +35,11 @@ class RoleTest < ActiveSupport::TestCase
     assert r.valid?, r.errors.full_messages
   end
 
+  test 'nymous predicate' do
+    assert roles(:administrator).nymous?
+    assert !roles(:user_chris).nymous?
+  end
+
   test 'unique name in resource scope' do
     assert r = Authorize::Role.new(:name => 'administrator')
     assert !r.valid?
