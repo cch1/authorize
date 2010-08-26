@@ -48,10 +48,6 @@ class Authorize::Role < ActiveRecord::Base
   end
   alias identity= resource
 
-  def nymous?
-    _resource.nil?
-  end
-
   # Link from this role's vertex to other's vertex in the system role graph.  This role becomes the parent.
   def link(other)
     self.class.graph.edge(nil, vertex, other.vertex)
