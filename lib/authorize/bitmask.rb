@@ -33,7 +33,7 @@ class Authorize::Bitmask < Set
   end
 
   def add(el)
-    raise ArgumentError, "Unrecognized bit name" unless self.class.name_values.keys.include?(el)
+    raise ArgumentError, "Unrecognized bit name (#{el})" unless self.class.name_values.keys.include?(el)
     super
   end
   alias << add
