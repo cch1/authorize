@@ -19,19 +19,19 @@ class RoleTest < ActiveSupport::TestCase
   end
 
   test 'new' do
-    assert r = Authorize::Role.new(:name => 'friend of %s', :_resource => users(:chris))
+    assert r = Authorize::Role.new(:name => 'friend of %s', :resource => users(:chris))
     assert r.valid?
   end
 
   test 'create' do
     Authorize::Graph.db.expects(:set).with(regexp_matches(/Authorize::Role::vertices::\d*::_/), nil).returns(true)
     assert_difference 'Authorize::Role.count' do
-      r = Authorize::Role.create(:name => 'friend of %s', :_resource => users(:chris))
+      r = Authorize::Role.create(:name => 'friend of %s', :resource => users(:chris))
     end
   end
 
   test 'new identity' do
-    assert r = Authorize::Role.new(:_resource => users(:pascale))
+    assert r = Authorize::Role.new(:resource => users(:pascale))
     assert r.valid?, r.errors.full_messages
   end
 

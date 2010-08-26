@@ -1,6 +1,6 @@
 a:
   name: a
-  _resource: foo (Widget)
+  resource: foo (Widget)
 administrator:
   name: administrator
 c:
@@ -8,13 +8,13 @@ c:
   resource_type: Widget
 d:
   name: "owner of %s"
-  _resource: bar (Widget)
+  resource: bar (Widget)
 e:
   name: "housekeeper of %s"
-  _resource: bar (Widget)
+  resource: bar (Widget)
 user_chris:
   name: ~
-  _resource: chris (User)
+  resource: chris (User)
 registered_users:
   name: Registered Users
 public:

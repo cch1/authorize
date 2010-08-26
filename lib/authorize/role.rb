@@ -2,26 +2,11 @@ require 'authorize/redis'
 
 class Authorize::Role < ActiveRecord::Base
   set_table_name 'authorize_roles'
-  belongs_to :_resource, :polymorphic => true, :foreign_type => 'resource_type', :foreign_key => 'resource_id'
+  belongs_to :resource, :polymorphic => true
   has_many :permissions, :class_name => "Authorize::Permission", :dependent => :delete_all
   validates_uniqueness_of :name, :scope => [:resource_type, :resource_id]
   after_save :create_vertex
   # TODO: after_destroy to delete vertex and associated edges
-
-  # This exists to simplify finding and creating global and class-level roles.  For resource instance-related
-  # roles, use the standard Rails association (#roles) created for authorizable resources.
-  named_scope :for, lambda {|resource|
-    resource_conditions = if (resource == Object) then
-       {:resource_id => nil, :resource_type => nil}
-    elsif resource.is_a?(Class) then
-       {:resource_id => nil, :resource_type => resource.to_s}
-    else
-       {:resource_id => resource.id, :resource_type => resource.class.to_s}
-    end
-    {:conditions => resource_conditions}
-  }
-  named_scope :global, :conditions => {:resource_type => nil, :resource_id => nil}
-  named_scope :identity, :conditions => {:name => nil}
 
   def self.graph
     @graph ||= Authorize::Graph.load('Authorize::Role::graph')
@@ -30,23 +15,6 @@ class Authorize::Role < ActiveRecord::Base
   def create_vertex
     self.class.graph.vertex("Authorize::Role::vertices::#{id}")
   end
-
-  # Virtual attribute that expands the common belongs_to association with a three-level hierarchy
-  # OPTIMIZE: revert this to a standard belongs_to association -do we really need the hierarchy here?
-  def resource
-    return Object unless resource_type
-    return resource_type.constantize unless resource_id
-    return _resource
-  end
-  alias identity resource
-
-  def resource=(res)
-    return self._resource = res unless res.kind_of?(Class)
-    self.resource_id = nil
-    return self[:resource_type] = nil if res == Object
-    return self[:resource_type] = res.to_s
-  end
-  alias identity= resource
 
   # Link from this role's vertex to other's vertex in the system role graph.  This role becomes the parent.
   def link(other)
