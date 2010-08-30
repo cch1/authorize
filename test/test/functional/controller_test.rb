@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'authorize/graph/fixtures'
 
 class ControllerTest < ActionController::TestCase
   fixtures :all
@@ -6,7 +7,7 @@ class ControllerTest < ActionController::TestCase
   tests WidgetsController
 
   def setup
-    Authorize::Redis::Fixtures.load(Authorize::Redis::Base.db, Pathname.new(fixture_path).join('redis', 'role_graph.yml'))
+    ::Authorize::Graph::Fixtures.create_fixtures
   end
 
   test 'predicate not stuck on false when permitted' do

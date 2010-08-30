@@ -1,6 +1,8 @@
 require 'test_helper'
+require 'authorize/graph/fixtures'
 
 class RoleTest < ActiveSupport::TestCase
+
   fixtures :all
 
   def setup
@@ -10,7 +12,7 @@ class RoleTest < ActiveSupport::TestCase
     Authorize::Graph.index.clear
     Authorize::Graph::Vertex.index.clear
     Authorize::Graph::Edge.index.clear
-    redis_fixtures(Authorize::Redis::Base.db, Pathname.new(fixture_path).join('redis', 'role_graph.yml'))
+    Authorize::Graph::Fixtures.create_fixtures
   end
 
   test 'new global' do

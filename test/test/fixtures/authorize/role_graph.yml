@@ -1,0 +1,5 @@
+--- !hapgoods.com,2010/graph
+- administrator
+- public
+- registered_users: [public]
+- user_chris: [registered_users]
