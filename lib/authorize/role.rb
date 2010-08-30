@@ -8,12 +8,16 @@ class Authorize::Role < ActiveRecord::Base
   after_save :create_vertex
   # TODO: after_destroy to delete vertex and associated edges
 
+  GRAPH_ID = Authorize::Graph.subordinate_key(Authorize::Role, 'graph')
+  VERTICES_ID_PREFIX = Authorize::Graph.subordinate_key(Authorize::Role, 'vertices')
+
   def self.graph
-    @graph ||= Authorize::Graph.load('Authorize::Role::graph')
+    @graph ||= Authorize::Graph.load(GRAPH_ID)
   end
 
   def create_vertex
-    self.class.graph.vertex("Authorize::Role::vertices::#{id}")
+    vertex_id = Authorize::Graph::Vertex.subordinate_key(VERTICES_ID_PREFIX, id)
+    self.class.graph.vertex(vertex_id)
   end
 
   # Link from this role's vertex to other's vertex in the system role graph.  This role becomes the parent.
