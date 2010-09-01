@@ -1,4 +1,5 @@
 require 'test/unit'
+require 'authorize/graph/fixtures'
 
 module Authorize
   module TestHelper
