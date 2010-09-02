@@ -89,7 +89,7 @@ class Authorize::Permission < ActiveRecord::Base
     @attributes_cache['mask'] = Mask.new(read_attribute('mask')) # Ensure we always return a Mask instance
   end
 
-  def to_s(reduce = true)
+  def to_s
     "#{role} over #{resource} (#{mask})"
   end
 end
