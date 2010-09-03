@@ -15,6 +15,7 @@ class ActiveSupport::TestCase
   rescue LoadError
     $stderr.puts "Skipping #{description} tests. `gem install mocha` and try again."
   end
+  setup {Authorize::Redis::Base.db.flushdb}
 end
 
 # Unfortunately, setting expectations on any instance for #initialize causes #mocha_teardown

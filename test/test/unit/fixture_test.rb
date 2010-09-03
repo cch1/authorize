@@ -3,7 +3,6 @@ require 'authorize/graph/fixtures'
 
 class FixtureTest < ActiveSupport::TestCase
   def setup
-    Authorize::Redis::Base.db.flushdb
     Authorize::Graph.index.clear # Clear the cache
     Authorize::Graph::Vertex.index.clear # Clear the cache
     Authorize::Graph::Edge.index.clear # Clear the cache

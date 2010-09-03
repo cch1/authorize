@@ -2,7 +2,6 @@ require 'test_helper'
 
 class RedisTest < ActiveSupport::TestCase
   def setup
-    Authorize::Redis::Base.db.flushdb
     Authorize::Redis::String.index.clear # Clear the cache
     Authorize::Redis::Set.index.clear
     Authorize::Redis::Hash.index.clear
