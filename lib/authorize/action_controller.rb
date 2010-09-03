@@ -27,9 +27,11 @@ module Authorize
       # Simple predicate for authorization.
       def permit?(authorization_hash, options = {})
         authorization_hash.any? do |(bits, resource)|
-          permitted_mask = Authorize::Permission::Mask[bits]
+          requested_mask = Authorize::Permission::Mask[bits]
           effective_mask = Authorize::Permission.effective_mask(resource, options[:roles] || self.roles) 
-          permitted_mask.subset?(effective_mask)
+          requested_mask.subset?(effective_mask).tap do |authorized|
+            Rails.logger.debug("Authorization check: #{requested_mask} #{authorized ? '∈' : '∉'} #{effective_mask}")
+          end
         end
       end
 
@@ -42,7 +44,7 @@ module Authorize
         if permit?(authorization_hash, options)
           yield if block_given?
         else
-          send(callback) if callback
+          __send__(callback) if callback
         end
       end
 
