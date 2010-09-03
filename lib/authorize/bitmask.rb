@@ -75,7 +75,7 @@ class Authorize::Bitmask < Set
   end
 
   def to_s
-    to_canonical_array.join(" | ")
+    to_canonical_array.join("|")
   end
 
   def to_canonical_array

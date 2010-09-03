@@ -101,7 +101,7 @@ class BitmaskTest < ActiveSupport::TestCase
 
   test 'stringify' do
     b = @bitmask.new(7)
-    assert_match /\w+(\s\|\s\w+){3}/, b.to_s
+    assert_match /\w+(\|\w+){3}/, b.to_s
     assert_match /none.*third/, b.to_s # canonical order
   end
 
