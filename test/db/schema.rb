@@ -10,7 +10,7 @@ ActiveRecord::Schema.define(:version => 0) do
   create_table :authorize_permissions, :force => true do |t|
     t.references :role, :null => false
     t.references :resource, :polymorphic => true
-    t.integer :mask, :limit => 255, :default => 1, :null => false
+    t.integer :mask, :limit => 4, :default => 1, :null => false
     t.datetime :updated_at
   end
   add_index :authorize_permissions, [:role_id, :resource_id, :resource_type], :unique => true
