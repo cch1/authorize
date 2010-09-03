@@ -16,19 +16,19 @@ class RoleTest < ActiveSupport::TestCase
   end
 
   test 'new global' do
-    assert r = Authorize::Role.new(:name => 'Master of the Universe')
+    assert r = Authorize::Role.new(:name => 'Master of the Universe', :relation => 'MST')
     assert r.valid?
   end
 
   test 'new' do
-    assert r = Authorize::Role.new(:name => 'friend of %s', :resource => users(:chris))
+    assert r = Authorize::Role.new(:name => 'friend of %s', :resource => users(:chris), :relation => 'FRN')
     assert r.valid?
   end
 
   test 'create' do
     Authorize::Graph.db.expects(:set).with(regexp_matches(/Authorize::Role::vertices::\d*::_/), nil).returns(true)
     assert_difference 'Authorize::Role.count' do
-      r = Authorize::Role.create(:name => 'friend of %s', :resource => users(:chris))
+      r = Authorize::Role.create(:name => 'friend of %s', :resource => users(:chris), :relation => 'FRN')
     end
   end
 

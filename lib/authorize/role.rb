@@ -5,7 +5,8 @@ class Authorize::Role < ActiveRecord::Base
   belongs_to :resource, :polymorphic => true
   has_many :permissions, :class_name => "Authorize::Permission", :dependent => :delete_all
   validates_uniqueness_of :name, :scope => [:resource_type, :resource_id]
-  after_save :create_vertex
+  validates_uniqueness_of :relation, :scope => [:resource_type, :resource_id]
+  after_create :create_vertex
   # TODO: after_destroy to delete vertex and associated edges
 
   GRAPH_ID = Authorize::Graph.subordinate_key(Authorize::Role, 'graph')

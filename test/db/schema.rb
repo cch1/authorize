@@ -19,7 +19,8 @@ ActiveRecord::Schema.define(:version => 0) do
   create_table :authorize_roles, :force => true do |t|
     t.references :resource, :polymorphic => true
     t.string :name
+    t.string :relation, :limit => 3
     t.datetime :updated_at
   end
-  add_index :authorize_roles, [:resource_type, :resource_id, :name], :unique => true
+  add_index :authorize_roles, [:resource_id, :resource_type, :relation], :unique => true
 end
