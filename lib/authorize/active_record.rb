@@ -8,6 +8,8 @@ module Authorize
       def authorizable_trustee
         include Authorize::Trustee
         has_one :role, :class_name => "Authorize::Role", :as => :resource, :conditions => {:name => nil}, :dependent => :destroy
+        has_many :roles
+        after_create :create_role
       end
   
       def authorizable_resource
