@@ -11,6 +11,7 @@ d:
   resource: bar (Widget)
 e:
   name: "housekeeper of %s"
+  relation: HSK
   resource: bar (Widget)
 user_chris:
   name: ~

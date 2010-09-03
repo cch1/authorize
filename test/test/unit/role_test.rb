@@ -47,6 +47,10 @@ class RoleTest < ActiveSupport::TestCase
     assert_equal Set[permissions(:b_overlord)], roles(:administrator).permissions.to_set
   end
 
+  test 'relation scope' do
+    assert_equal Set[roles(:e)], Authorize::Role.as('HSK').to_set
+  end
+
   test 'may adds modes to existing permission' do
     p = permissions(:e_delete_bar)
     mask = p.mask + [:update]
