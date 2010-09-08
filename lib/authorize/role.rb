@@ -10,6 +10,7 @@ class Authorize::Role < ActiveRecord::Base
   # TODO: after_destroy to delete vertex and associated edges
 
   named_scope :as, lambda{|relation| {:conditions => {:relation => relation}}}
+  named_scope :identity, {:conditions => {:relation => nil}}
 
   GRAPH_ID = Authorize::Graph.subordinate_key(Authorize::Role, 'graph')
   VERTICES_ID_PREFIX = Authorize::Graph.subordinate_key(Authorize::Role, 'vertices')
