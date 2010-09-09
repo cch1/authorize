@@ -1,9 +1,7 @@
 require 'authorize/bitmask'
 
 class Authorize::Permission < ActiveRecord::Base
-  class Mask < Authorize::Bitmask
-    self.name_values = {:list => 1, :read => 2, :update => 4, :delete => 8, :add => 16, :remove => 32, :manage => 64, :all => 127}
-  end
+  class Mask < Authorize::Bitmask;end
 
   set_table_name 'authorize_permissions'
   # This is of questionable value given the specific implementation of mask attribute methods.  It also requires

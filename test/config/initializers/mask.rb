@@ -1,0 +1,1 @@
+Authorize::Permission::Mask.name_values = {:list => 1, :read => 2, :update => 4, :delete => 8, :add => 16, :remove => 32, :manage => 64, :all => (2**31)-1}
