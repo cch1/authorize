@@ -48,6 +48,7 @@ class Authorize::Permission < ActiveRecord::Base
     end
     {:conditions => resource_conditions}
   }
+  named_scope :to_do, lambda {|mask| {:conditions =>"mask & #{mask.to_i} = #{mask.to_i}"}}
   named_scope :as, lambda {|roles| {:conditions => {:role_id => roles.map(&:id)}}}
   named_scope :global, :conditions => {:resource_type => nil, :resource_id => nil}
 

@@ -26,11 +26,11 @@ module Authorize
     module InstanceMethods
       # Simple predicate for authorization.
       def permit?(authorization_hash, options = {})
-        authorization_hash.any? do |(bits, resource)|
-          requested_mask = Authorize::Permission::Mask[bits]
-          effective_mask = Authorize::Permission.effective_mask(resource, options[:roles] || self.roles) 
-          requested_mask.subset?(effective_mask).tap do |authorized|
-            Rails.logger.debug("Authorization check: #{requested_mask} #{authorized ? '∈' : '∉'} #{effective_mask}")
+        authorization_hash.any? do |(modes, resource)|
+          request_mask = Authorize::Permission::Mask[modes]
+          roles = options[:roles] || self.roles
+          Authorize::Permission.to_do(request_mask).over(resource).as(roles).any?.tap do |authorized|
+            Rails.logger.debug("Authorization check: #{authorized ? '✔' : '✖'} #{request_mask}")
           end
         end
       end

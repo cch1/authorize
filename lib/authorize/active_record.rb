@@ -22,8 +22,10 @@ module Authorize
         auth_fk = "#{reflection.quoted_table_name}.#{connection.quote_column_name(reflection.primary_key_name)}"
         resource_pk = "#{connection.quote_table_name(table_name)}.#{connection.quote_column_name(primary_key)}"
         # See README file for a discussion of the performance of this named scope
-        named_scope :permitted, lambda {|roles|
+        named_scope :permitted, lambda {|*args|
+          roles, modes = *args
           scope = Permission.as(roles)
+          scope = scope.to_do(Authorize::Permission::Mask[modes]) if modes
           sq0 = scope.construct_finder_sql({:select => 1, :conditions => {:resource_id => nil, :resource_type => nil}})
           sq1 = scope.construct_finder_sql({:select => 1, :conditions => {:resource_type => base_class.name, :resource_id => nil}})
           sq2 = scope.scoped(:conditions => "#{auth_fk} = #{resource_pk}").construct_finder_sql({:select => 1, :conditions => {:resource_type => base_class.name}})
