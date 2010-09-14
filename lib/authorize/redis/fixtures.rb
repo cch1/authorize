@@ -2,8 +2,8 @@ module Authorize
   module Redis
     # Persist Ruby objects to Redis DB using natural type affinity
     module Fixtures
-      def redis_fixtures(db, pathname)
-        db.flushdb
+      def create_fixtures(db, pathname, flush = true)
+        db.flushdb if flush
         fixtures = YAML.load(ERB.new(pathname.read).result)
         fixtures.each do |node|
           node.each_pair do |key, value|
@@ -16,8 +16,7 @@ module Authorize
           end
         end
       end
-      alias load redis_fixtures
-      module_function :load
+      module_function :create_fixtures
     end
   end
 end

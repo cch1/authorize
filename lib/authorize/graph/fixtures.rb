@@ -6,8 +6,8 @@ module Authorize::Graph::Fixtures
     process(Authorize::Role.graph, value)
   end
 
-  def create_fixtures(db = Authorize::Redis::Base.db, pathname = Pathname.new(ActiveSupport::TestCase.fixture_path).join('authorize', 'role_graph.yml'))
-    db.flushdb
+  def create_fixtures(db = Authorize::Redis::Base.db, pathname = Pathname.new(ActiveSupport::TestCase.fixture_path).join('authorize', 'role_graph.yml'), flush = true)
+    db.flushdb if flush
     YAML.load(ERB.new(pathname.read).result)
   end
   module_function :create_fixtures
