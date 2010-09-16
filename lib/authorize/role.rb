@@ -20,7 +20,6 @@ class Authorize::Role < ActiveRecord::Base
   end
 
   def create_vertex
-    vertex_id = Authorize::Graph::Vertex.subordinate_key(VERTICES_ID_PREFIX, id)
     self.class.graph.vertex(vertex_id)
   end
 
@@ -68,11 +67,11 @@ class Authorize::Role < ActiveRecord::Base
 
   def vertex
     raise 'Not possible to dereference vertex for an unpersisted role' unless id
-    @vertex ||= Authorize::Graph::Vertex.load("Authorize::Role::vertices::#{id}")
+    @vertex ||= Authorize::Graph::Vertex.load(vertex_id)
   end
 
   def roles
-    ids = vertex.traverse.map{|v| v.id.slice(/.*::(\d+)/, 1) }
+    ids = vertex.traverse.map{|v| v.id.slice(/#{VERTICES_ID_PREFIX}::(\d+)/, 1) }
     self.class.find(ids).to_set
   end
 
@@ -82,5 +81,10 @@ class Authorize::Role < ActiveRecord::Base
 
   def parents
     raise "Not Yet Implemented"
+  end
+
+  private
+  def vertex_id
+    @vertex_id ||= Authorize::Graph::Vertex.subordinate_key(VERTICES_ID_PREFIX, id)
   end
 end
