@@ -3,6 +3,7 @@ a:
   resource: foo (Widget)
 administrator:
   name: administrator
+  relation: ADM
 c:
   name: "%s administrator"
   resource_type: Widget
@@ -18,5 +19,7 @@ user_chris:
   resource: chris (User)
 registered_users:
   name: Registered Users
+  relation: RUS
 public:
   name: Public
+  relation: PUB
