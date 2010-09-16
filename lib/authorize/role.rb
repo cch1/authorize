@@ -15,6 +15,14 @@ class Authorize::Role < ActiveRecord::Base
   GRAPH_ID = Authorize::Graph.subordinate_key(Authorize::Role, 'graph')
   VERTICES_ID_PREFIX = Authorize::Graph.subordinate_key(Authorize::Role, 'vertices')
 
+  def self.const_missing(const)
+    if global_role = scoped(:conditions => {:resource_type => nil, :resource_id => nil}).find_by_relation(const.to_s)
+      const_set(const, global_role)
+    else
+      super
+    end
+  end
+
   def self.graph
     @graph ||= Authorize::Graph.load(GRAPH_ID)
   end
