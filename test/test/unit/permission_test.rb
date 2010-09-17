@@ -98,16 +98,17 @@ class PermissionTest < ActiveSupport::TestCase
     assert_equal Set[permissions(:b_overlord), permissions(:c_all_widgets), permissions(:a_read_foo)], Authorize::Permission.over(widgets(:foo)).to_set
   end
 
-  test 'effective permissions' do
-    assert_equal Set[permissions(:d_update_bar), permissions(:e_delete_bar)], Authorize::Permission.effective(widgets(:bar), Set[roles(:d), roles(:e)]).to_set
+  test 'aggregate_mask' do
+    assert_equal Set[:list, :read, :update, :delete], Authorize::Permission.over(widgets(:bar)).as([roles(:d), roles(:e)]).aggregate_mask.to_set
   end
 
-  test 'effective permission mask' do
-    assert_equal Authorize::Permission::Mask[:list, :read, :update, :delete], Authorize::Permission.effective_mask(widgets(:bar), Set[roles(:d), roles(:e)])
+  test 'aggregate mask for no permissions' do
+    assert_equal Authorize::Permission::Mask[], Authorize::Permission.over(widgets(:bar)).as([]).aggregate_mask
   end
 
-  test 'effective permission mask for no permissions' do
-    assert_equal Authorize::Permission::Mask[], Authorize::Permission.effective_mask(widgets(:bar), Set[])
+  test 'permit predicate' do
+    assert Authorize::Permission.over(widgets(:bar)).as([roles(:d), roles(:e)]).permit?(Authorize::Permission::Mask[:update])
+    assert !Authorize::Permission.over(widgets(:bar)).as([roles(:d), roles(:e)]).permit?(Authorize::Permission::Mask[:manage])
   end
 
   test 'default includes list mode' do

@@ -29,7 +29,7 @@ module Authorize
         authorization_hash.any? do |(modes, resource)|
           request_mask = Authorize::Permission::Mask[modes]
           roles = options[:roles] || self.roles
-          Authorize::Permission.to_do(request_mask).over(resource).as(roles).any?.tap do |authorized|
+          Authorize::Permission.over(resource).as(roles).permit?(request_mask).tap do |authorized|
             Rails.logger.debug("Authorization check: #{authorized ? '✔' : '✖'} #{request_mask}")
           end
         end

@@ -52,14 +52,17 @@ class Authorize::Permission < ActiveRecord::Base
   named_scope :as, lambda {|roles| {:conditions => {:role_id => roles.map(&:id)}}}
   named_scope :global, :conditions => {:resource_type => nil, :resource_id => nil}
 
-  # Find the effective permissions over a given resource for a given set of role_ids
-  def self.effective(resource, roles)
-    over(resource).as(roles)
+  # Determine if the aggregate mask includes the requested modes.
+  def self.permit?(requested_modes)
+    requested_modes.subset?(aggregate_mask)
   end
 
-  # Find the effective permission mask over a given resource for a given set of role_ids
-  def self.effective_mask(*args)
-    effective(*args).inject(Mask.new){|memo, p| memo.merge(p.mask)}.complete
+  # Find the aggregate permission mask for the current scope
+  # This calculation could be more effectively performed at the database using an aggregate function.  For
+  # MySQL, a bit_or function exists.  For SQLite3, it is necessary to code an extension.  For an example,
+  # see:  http://snippets.dzone.com/posts/show/3717
+  def self.aggregate_mask
+    Mask.new(all.reduce(Set.new){|memo, p| memo | p.mask})
   end
 
   # Because the list mode is always assumed to be set for performance, we expose that assumption explicitly.

@@ -69,21 +69,21 @@ class RoleTest < ActiveSupport::TestCase
     assert_difference "Authorize::Permission.count", 1 do
       assert_equal Set[:list, :update], roles(:e).may(:update, widgets(:foo))
     end
-    assert !Authorize::Permission.effective(widgets(:foo), [roles(:e)]).empty?
+    assert !Authorize::Permission.over(widgets(:foo)).as([roles(:e)]).empty?
   end
 
   test 'may_not deletes permission as required' do
     assert_difference "Authorize::Permission.count", -1 do
       assert_equal Set[], roles(:e).may_not(:all, widgets(:bar))
     end
-    assert Authorize::Permission.effective(widgets(:bar), [roles(:e)]).empty?
+    assert Authorize::Permission.over(widgets(:bar)).as([roles(:e)]).empty?
   end
 
   test 'may_not does nothing as required' do
     assert_no_difference "Authorize::Permission.count" do
       assert_equal Set[], roles(:e).may_not(:all, widgets(:foo))
     end
-    assert Authorize::Permission.effective(widgets(:foo), [roles(:e)]).empty?
+    assert Authorize::Permission.over(widgets(:foo)).as([roles(:e)]).empty?
   end
 
   test 'may predicate' do
