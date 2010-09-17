@@ -62,7 +62,7 @@ class Authorize::Permission < ActiveRecord::Base
   # MySQL, a bit_or function exists.  For SQLite3, it is necessary to code an extension.  For an example,
   # see:  http://snippets.dzone.com/posts/show/3717
   def self.aggregate_mask
-    Mask.new(all.reduce(Set.new){|memo, p| memo | p.mask})
+    Mask.new(all.inject(Set.new){|memo, p| memo | p.mask})
   end
 
   # Because the list mode is always assumed to be set for performance, we expose that assumption explicitly.
