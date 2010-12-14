@@ -24,8 +24,7 @@ Rails::Initializer.run do |config|
 
   config.gem 'redis', :version => '>=2.0'
   config.after_initialize do
-    silence_stream(STDOUT) do # This gets executed too often by rake and lowers the s/n ratio too much
-      require File.join(RAILS_ROOT, "db", 'schema.rb')
-    end    
+    ActiveRecord::Migration.verbose = false
+    require File.join(RAILS_ROOT, "db", 'schema.rb')
   end
 end
