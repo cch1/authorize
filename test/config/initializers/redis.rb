@@ -1,4 +1,4 @@
-db = ::Redis.new.tap {|r| r.select 7}
+db = ::Redis.new(:thread_safe => true).tap {|r| r.select 7}
 signature_key = ""
 signature = "Authorize Plugin Testing DB" # This is intended to be transparent, not secure.
 db.setnx(signature_key, signature) # Set our magic cookie to avoid database clashes.
