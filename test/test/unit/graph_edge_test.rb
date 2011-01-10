@@ -28,7 +28,7 @@ class GraphEdgeTest < ActiveSupport::TestCase
   test 'left' do
     name, from, from_id = 'name', mock('from'), 'from_id'
     Authorize::Graph::Edge.db.expects(:get).with(name + '::l_id').returns(from_id)
-    Authorize::Graph::Vertex.index.expects(:[]).with(from_id).returns(from)
+    Authorize::Graph::Vertex.expects(:load).with(from_id).returns(from)
     assert_kind_of Authorize::Graph::Edge, e = Authorize::Graph::Edge.load(name)
     assert_equal from, e.left
   end
@@ -36,7 +36,7 @@ class GraphEdgeTest < ActiveSupport::TestCase
   test 'right' do
     name, to, to_id = 'name', mock('to'), 'to_id'
     Authorize::Graph::Edge.db.expects(:get).with(name + '::r_id').returns(to_id)
-    Authorize::Graph::Vertex.index.expects(:[]).with(to_id).returns(to)
+    Authorize::Graph::Vertex.expects(:load).with(to_id).returns(to)
     assert_kind_of Authorize::Graph::Edge, e = Authorize::Graph::Edge.load(name)
     assert_equal to, e.right
   end

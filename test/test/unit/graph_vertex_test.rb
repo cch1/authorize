@@ -23,7 +23,7 @@ class GraphVertexTest < ActiveSupport::TestCase
     name, edge, edge_id = 'name', mock('edge'), 'edge_id'
     v = Authorize::Graph::Vertex.load(name)
     Authorize::Graph::Vertex.db.expects(:smembers).with(v.subordinate_key('edge_ids')).returns(Set[edge_id])
-    Authorize::Graph::Edge.index.expects(:[]).with(edge_id).returns(edge)
+    Authorize::Graph::Edge.expects(:load).with(edge_id).returns(edge)
     assert_equal Set[edge], v.edges
   end
 end
