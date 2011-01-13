@@ -13,6 +13,8 @@ module Authorize
       NAMESPACE_SEPARATOR = '::'
       @base = true
       class << self
+        attr_writer :logger
+
         attr_writer :db
         def db
           @db || (@base ? nil : superclass.db) # Search up the inheritance chain for a value, but allow overriding
@@ -23,6 +25,10 @@ module Authorize
         md = /tag:(.*),([^:]*):((?:\w+)(?:::\w+)*)/.match(type)
         domain, version, klass = *md[1..3]
         klass.constantize.load(val)
+      end
+
+      def self.logger
+        @logger ||= (@base ? nil : superclass.logger)
       end
 
       def self.subordinate_key(*keys)
@@ -64,6 +70,10 @@ module Authorize
       attr_reader :id
       alias to_s id
 
+      def logger
+        self.class.logger
+      end
+
       def eql?(other)
         other.is_a?(self.class) && id.eql?(other.id)
       end
@@ -91,7 +101,7 @@ module Authorize
       end
 
       # Emit this Redis object with a a magic type and simple scalar identifier.  The (poorly documented) "type id" format
-      # allows for a succint one-line YAML expression for a Redis instance (no indented attributes hash required) which in 
+      # allows for a succinct one-line YAML expression for a Redis instance (no indented attributes hash required) which in
       # turn simplifies automatic YAMLification of collections of Redis objects.  Arguably, it's more readable as well.
       def to_yaml(opts = {})
         YAML.quick_emit(self.id, opts) {|out| out.scalar("tag:hapgoods.com,2010-08-11:#{self.class.name}", id)}
