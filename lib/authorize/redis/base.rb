@@ -68,6 +68,10 @@ module Authorize
         self.class.logger
       end
 
+      def db
+        self.class.db
+      end
+
       def eql?(other)
         other.is_a?(self.class) && id.eql?(other.id)
       end
