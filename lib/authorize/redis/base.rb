@@ -21,12 +21,6 @@ module Authorize
         end
       end
 
-      YAML.add_domain_type("hapgoods.com,2010-08-11", "") do |type, val|
-        md = /tag:(.*),([^:]*):((?:\w+)(?:::\w+)*)/.match(type)
-        domain, version, klass = *md[1..3]
-        klass.constantize.load(val)
-      end
-
       def self.logger
         @logger ||= (@base ? nil : superclass.logger)
       end
@@ -123,56 +117,11 @@ module Authorize
         __getobj__.respond_to?(m, include_private)
       end
     end
-
-    class String < Base
-      def __getobj__
-        self.class.db.get(id)
-      end
-
-      def set(v)
-        self.class.db.set(id, v)
-      end
-    end
-
-    class Set < Base
-      undef to_a # In older versions of Ruby, Object#to_a is invoked and #method_missing is never called.
-
-      def add(v)
-        self.class.db.sadd(id, v)
-      end
-      alias << add
-
-      def delete(v)
-        self.class.db.sdelete(id, v)
-      end
-
-      def __getobj__
-        self.class.db.smembers(id).to_set
-      end
-    end
-
-    class Hash < Base
-      undef to_a # In older versions of Ruby, Object#to_a is invoked and #method_missing is never called.
-
-      def get(k)
-        self.class.db.hget(id, k)
-      end
-
-      def set(k, v)
-        self.class.db.hset(id, k, v)
-      end
-
-      def merge(h)
-        args = h.inject([]) do |m,(k,v)|
-          m << k
-          m << v
-        end
-        self.class.db.hmset(id, *args)
-      end
-
-      def __getobj__
-        self.class.db.hgetall(id)
-      end
-    end
   end
+end
+
+YAML.add_domain_type("hapgoods.com,2010-08-11", "") do |type, val|
+  md = /tag:(.*),([^:]*):((?:\w+)(?:::\w+)*)/.match(type)
+  domain, version, klass = *md[1..3]
+  klass.constantize.load(val)
 end
