@@ -11,7 +11,8 @@ class ResourcePoolTest < ActiveSupport::TestCase
     @factory.expects(:call).never
     pool = Authorize::ResourcePool.new(5, @factory)
     assert_equal 0, pool.size
-    assert_equal 0, pool.num_waiting
+    assert_equal 5, pool.available
+    assert !pool.empty?
   end
 
   test 'checkout calls factory for inventory' do
@@ -20,12 +21,12 @@ class ResourcePoolTest < ActiveSupport::TestCase
     assert_same @resources[0], pool.checkout
   end
 
-  test 'checkout blocks when none available' do
+  test 'checkout waits until one available' do
     begin
       @factory.expects(:call).once.returns(@resources[0])
       pool = Authorize::ResourcePool.new(1, @factory)
       pool.checkout # claim the only resource
-      t = Thread.new(pool) {|m| m.checkout}
+      t = Thread.new(pool) {|p| p.checkout}
       t.run
       assert_equal 'sleep', t.status
       assert_equal 1, pool.num_waiting
@@ -46,17 +47,34 @@ class ResourcePoolTest < ActiveSupport::TestCase
     res = pool.checkout
     pool.checkin(res)
     assert pool.include?(res)
-    assert_equal 10, pool.num_available
+    assert_equal 10, pool.available
+  end
+
+  test 'checkin signals when one available' do
+    begin
+      @factory.expects(:call).once.returns(@resources[0])
+      pool = Authorize::ResourcePool.new(1, @factory)
+      res = pool.checkout # claim the only resource
+      t = Thread.new(pool) {|p| p.checkout}
+      t.run
+      assert_equal 'sleep', t.status
+      assert_equal 1, pool.num_waiting
+      pool.checkin(res)
+      t.join(2)
+      assert_equal false, t.status
+    ensure
+      t.exit
+    end
   end
 
   test 'expire removes resource from pool' do
     pool = Authorize::ResourcePool.new(3, @factory)
     resources = []
     3.times {resources << pool.checkout}
-    marked_for_expiration = resources.last
-    not_marked_for_expiration = resources.first
+    marked_for_expiration = resources.first
+    not_marked_for_expiration = resources.last
     3.times {pool.checkin(resources.pop)}
-    pool.expire {|obj, flag| obj == marked_for_expiration}
+    pool.expire {|obj| obj == marked_for_expiration}
     assert !pool.include?(marked_for_expiration)
     assert pool.include?(not_marked_for_expiration)
   end
@@ -65,10 +83,10 @@ class ResourcePoolTest < ActiveSupport::TestCase
     pool = Authorize::ResourcePool.new(3, @factory)
     resources = []
     3.times {resources << pool.checkout}
-    marked = resources.last
-    not_marked = resources.first
+    marked = resources.first
+    not_marked = resources.last
     3.times {pool.checkin(resources.pop)}
-    pool.freshen {|obj, flag| obj == marked}
+    pool.freshen {|obj| obj == marked}
     assert pool.include?(marked)
     assert pool.include?(not_marked)
   end

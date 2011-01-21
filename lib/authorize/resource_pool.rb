@@ -1,58 +1,77 @@
-require 'thread'
+require 'monitor'
 require 'set'
 require 'forwardable'
 
 module Authorize
-  # Arbitrate access to a limited set of expensive and perishable objects
+  # Arbitrate thread-safe access to a limited set of expensive and perishable objects
   class ResourcePool
     extend Forwardable
 
-    def_delegators :@reserved, :size
     def_delegators :@pool, :include?
-    def_delegators :@token_q, :num_waiting, :empty?
+    def_delegators :@tokens, :empty?
+
+    attr_reader :num_waiting
 
     # Create a new unfilled resource pool with a capacity of of at most max_size objects.  The pool
     # is lazily filled by the factory lambda.
     def initialize(max_size, factory)
       @factory = factory
       @pool = []
-      @reserved = Set.new
-      @token_q = Queue.new
-      max_size.times {|i| @token_q << i}
+      @tokens = []
+      @monitor = Monitor.new
+      @tokens_cv = @monitor.new_cond
+      @num_waiting = 0
+      max_size.times {|i| @tokens << i}
     end
 
-    def num_available
-      @token_q.length
+    def size
+      @pool.compact.length
     end
 
-    # Checkout an object from the pool
-    def checkout
-      index = @token_q.pop(false)
-      @reserved << index
-      @pool[index] ||= @factory.call
+    def available
+      @tokens.size
+    end
+
+    # Checkout an object from the pool.  Arguments are passed unmolested to ConditionVariable#wait to manage timeouts.
+    def checkout(*args)
+      @monitor.synchronize do
+        until token = @tokens.pop
+          begin
+            @num_waiting += 1
+            raise "Timed out during checkout" unless @tokens_cv.wait(*args)
+          ensure
+            @num_waiting -= 1
+          end
+        end
+        @pool[token] ||= @factory.call
+      end
     end
 
     # Return an object to the pool
     def checkin(obj)
-      index = @pool.index(obj)
-      raise "#{obj} has not been checked out from this pool" unless @reserved.delete?(index)
-      @token_q.push(index) if index
+      @monitor.synchronize do
+        token = @pool.index(obj)
+        raise "#{obj} has not been checked out from this pool" unless token && !@tokens.include?(token)
+        @tokens.push(token) if token
+        @tokens_cv.signal
+      end
     end
 
-    # Expire objects in the pool with the given block.  Pool members are yielded to the block
-    # along with an indicator of whether they are checked out.  The object is expired (removed
-    # permanently from the pool) if the block returns a true-ish value.
+    # Expire resources in inventory with the given block.  Available (not reserved) pool members are
+    # yielded to the block.  The object is expired (removed permanently from the pool) if the block
+    # returns a true-ish value.
     def expire
-      @pool.each_with_index do |obj, i|
-        next unless obj
-        expired = yield obj, @reserved.member?(i)
-        @pool[i] = nil if expired
+      @monitor.synchronize do
+        @tokens.each do |i|
+          next unless obj = @pool[i]
+          @pool[i] = nil if yield obj
+        end
       end
     end
 
     # Freshen objects in inventory with the given block
     def freshen
-      expire {|obj, reserved| yield(obj) unless reserved ; return false}
+      expire {|obj| yield(obj) ; return false}
     end
   end
 end
