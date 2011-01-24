@@ -21,7 +21,7 @@ module Authorize
       @monitor = Monitor.new
       @tokens_cv = @monitor.new_cond
       @num_waiting = 0
-      max_size.times {|i| @tokens << i}
+      max_size.times {|i| @tokens.unshift(i)}
     end
 
     def size
@@ -72,6 +72,16 @@ module Authorize
     # Freshen objects in inventory with the given block
     def freshen
       expire {|obj| yield(obj) ; return false}
+    end
+
+    # Remove all resources from the pool and revoke all tokens
+    # TODO: don't brutally/blindly revoke tokens -raise an exception or fire a callback, and address waiting threads.
+    def clear!
+      @monitor.synchronize do
+        @pool.each_index {|i| @tokens << i}
+        @tokens.uniq!
+        @pool.clear
+      end
     end
   end
 end
