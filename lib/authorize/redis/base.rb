@@ -1,11 +1,13 @@
 module Authorize
   module Redis
-    # The key feature of this class is that it presents a coherent view of the database in memory.  For
+    # The key feature of this module is that it presents a coherent view of the database in memory.  For
     # each database entry, at most one in-memory Ruby object will exist, and all state for the object will
     # be atomically persisted to the database.  This behavior introduces the following constraints:
-    #   1.  The database key must be known prior to initialization, allowing new objects to be instantiated
-    #       only if no previously instantiated object with that key is already in memory.
-    #   2.  In order to allow Redis#initialize to set values (which are atomically persisted), the id must
+    #   1.  The database is viewed through an identity map (http://en.wikipedia.org/wiki/Identity_map) to
+    #       ensure in-thread coherency.  Consequently, the record's key must be known prior to initialization,
+    #       allowing new objects to be instantiated only if no previously instantiated object with that key is
+    #       already in memory.
+    #   2.  In order to allow Redis::Base#initialize to set values (which are atomically persisted), the id must
     #       be available at the _start_ of initialization.  This is accomplished by overriding Redis.new and
     #       assigning the id immediately after allocation.
     # TODO: YAML serialization (http://groups.google.com/group/comp.lang.ruby/browse_thread/thread/c855253c9d8f482e)
@@ -14,11 +16,22 @@ module Authorize
       @base = true
       class << self
         attr_writer :logger
+        attr_writer :connection_specification
 
-        attr_writer :db
-        def db
-          @db || (@base ? nil : superclass.db) # Search up the inheritance chain for a value, but allow overriding
+        # Should this class establish a connection instead of relying on a superclass' connection?
+        def connection_base?
+          @base || @connection_specification
         end
+
+        # Search up the inheritance chain for a manager unless a connection is specified here.
+        def connection_manager
+          @manager ||= (connection_base? ? Authorize::Redis::ConnectionManager.new(@connection_specification) : superclass.connection_manager)
+        end
+
+        def connection
+          connection_manager.connection
+        end
+        alias db connection
       end
 
       def self.logger
