@@ -26,10 +26,9 @@ module Authorize
       end
 
       # Retrieve the connection associated with the current thread, or checkout one from the pool as required.
-      #
-      # #connection can be called any number of times; the connection is held in a hash keyed by the thread id.
+      # #connection can be called any number of times; the connection is held in a hash with a thread-specific key.
       def acquire_connection
-        @connection_map[current_connection_id] ||= @pool.checkout
+        @connection_map[current_connection_id] ||= @pool.checkout(10)
       end
       alias connection acquire_connection
 
@@ -69,7 +68,7 @@ module Authorize
           !connection.client.connected?
         end
       end
-      
+
       # Revert to a freshly initialized state
       def reset!
         @mutex.synchronize do
