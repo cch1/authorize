@@ -9,7 +9,7 @@ module Authorize
       alias << add
 
       def delete(v)
-        db.sdelete(id, v)
+        db.srem(id, v)
       end
 
       def __getobj__

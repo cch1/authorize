@@ -112,18 +112,6 @@ class RedisTest < ActiveSupport::TestCase
     end
   end
 
-# --Set---------------------------------------------------------------------
-  test 'proxy to native set' do
-    s = Authorize::Redis::Set.new
-    s.add(23)
-    assert_equal 1, s.length
-  end
-
-  test 'enumerable' do
-    s = Authorize::Redis::Set.new
-    s.add(23);s.add(27)
-    assert_equal "2327", s.inject{|m, e| m + e}
-  end
 # --Hash--------------------------------------------------------------------
   test 'hash keys are stringified' do
     h = Authorize::Redis::Hash.new
