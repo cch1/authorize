@@ -3,8 +3,6 @@ require 'test_helper'
 class RedisTest < ActiveSupport::TestCase
   def setup
     Authorize::Redis::String.index.clear # Clear the cache
-    Authorize::Redis::Set.index.clear
-    Authorize::Redis::Hash.index.clear
   end
 
   test 'identity' do
@@ -102,13 +100,5 @@ class RedisTest < ActiveSupport::TestCase
     assert_raises TypeError do
       v << "DEF"
     end
-  end
-
-# --Hash--------------------------------------------------------------------
-  test 'hash keys are stringified' do
-    h = Authorize::Redis::Hash.new
-    h.set("", 'empty')
-    h.set(nil, 'nil')
-    assert_equal 'nil', h.get(nil)
   end
 end
