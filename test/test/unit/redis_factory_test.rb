@@ -6,7 +6,9 @@ class RedisFactoryTest < ActiveSupport::TestCase
   test 'string factory' do
     key, value = 'key', 'value'
     Authorize::Redis::Base.db.expects(:set).with(key, value)
-    Authorize::Redis::Factory.build.string(key, value)
+    obj = Authorize::Redis::Factory.new.string(key, value)
+    assert_kind_of Authorize::Redis::String, obj
+    assert_equal key, obj.id
   end
 
   test 'set factory' do
@@ -14,7 +16,9 @@ class RedisFactoryTest < ActiveSupport::TestCase
     elements = value.to_a
     Authorize::Redis::Base.db.expects(:sadd).with(key, elements.first)
     Authorize::Redis::Base.db.expects(:sadd).with(key, elements.last)
-    Authorize::Redis::Factory.build.set(key, value)
+    obj = Authorize::Redis::Factory.new.set(key, value)
+    assert_kind_of Authorize::Redis::Set, obj
+    assert_equal key, obj.id
   end
 
   test 'hash factory' do
@@ -22,17 +26,21 @@ class RedisFactoryTest < ActiveSupport::TestCase
     keys = value.keys
     Authorize::Redis::Base.db.expects(:hset).with(key, keys.first, value[keys.first])
     Authorize::Redis::Base.db.expects(:hset).with(key, keys.last, value[keys.last])
-    Authorize::Redis::Factory.build.hash(key, value)
+    obj = Authorize::Redis::Factory.new.hash(key, value)
+    assert_kind_of Authorize::Redis::Hash, obj
+    assert_equal key, obj.id
   end
 
   test 'array factory' do
     key, value = 'key', ['value0', 'value1']
     Authorize::Redis::Base.db.expects(:rpush).with(key, value.first).in_sequence
     Authorize::Redis::Base.db.expects(:rpush).with(key, value.last).in_sequence
-    Authorize::Redis::Factory.build.array(key, value)
+    obj = Authorize::Redis::Factory.new.array(key, value)
+    assert_kind_of Authorize::Redis::Array, obj
+    assert_equal key, obj.id
   end
 
-  test 'factory with block' do
+  test 'build with block' do
     namespace, key, value = :namespace, 'key', 'value'
     Authorize::Redis::Base.db.expects(:set).with([namespace, key].join('::'), value)
     Authorize::Redis::Factory.build(namespace){string(key, value)}
@@ -63,5 +71,15 @@ class RedisFactoryTest < ActiveSupport::TestCase
     f = Authorize::Redis::Factory.build
     f.namespace(ns){string(key1, value1)}
     f.string(key2, value2)
+  end
+
+  test 'returned object has namespaced id' do
+    namespace, key, value = :namespace, 'key', 'value'
+    fqk = [namespace, key].join('::')
+    Authorize::Redis::Base.db.expects(:set).with(fqk, value)
+    f = Authorize::Redis::Factory.build(namespace)
+    obj = f.string(key, value)
+    assert_kind_of Authorize::Redis::String, obj
+    assert_equal fqk, obj.id
   end
 end

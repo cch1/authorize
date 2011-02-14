@@ -31,28 +31,28 @@ module Authorize
         key = subordinate_key(name)
         db.set(key, value)
         namespace(name){yield} if block_given?
-        Redis::String.load(name)
+        Redis::String.load(key)
       end
 
       def hash(name, value = {})
         key = subordinate_key(name)
         value.each {|k, v| db.hset(key, k, v)}
         namespace(name){yield} if block_given?
-        Redis::Hash.load(name)
+        Redis::Hash.load(key)
       end
 
       def set(name, value = ::Set[])
         key = subordinate_key(name)
         value.each {|v| db.sadd(key, v)}
         namespace(name){yield} if block_given?
-        Redis::Set.load(name)
+        Redis::Set.load(key)
       end
       
       def array(name, value = [])
         key = subordinate_key(name)
         value.each {|v| db.rpush(key, v)}
         namespace(name){yield} if block_given?
-        Redis::Array.load(name)
+        Redis::Array.load(key)
       end
 
       private
