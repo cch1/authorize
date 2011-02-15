@@ -24,8 +24,30 @@ module Authorize
     end
     alias neighbors adjancies
 
+    def link(other, properties = {})
+      existing_edge = edges.detect{|e| other.id == e.right.id}
+      existing_edge && existing_edge.merge(properties)
+      existing_edge || Graph::Edge.new(nil, self, other, properties).tap do |edge|
+        edge_ids << edge.id
+      end
+    end
+
+    def unlink(other)
+      edges.select{|e| other.id == e.right.id}.each do |edge|
+        edge_ids.delete(edge.id)
+        edge.destroy
+      end
+    end
+
     def traverse(options = {})
       Graph::Traverser.new(self)
+    end
+
+    def destroy
+      edges.each{|e| e.destroy}
+      edge_ids.destroy
+      self.class.db.del(subordinate_key('_'))
+      super
     end
   end
 end
