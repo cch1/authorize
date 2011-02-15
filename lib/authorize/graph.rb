@@ -49,7 +49,7 @@ module Authorize
 
     def edge(id, *args)
       Edge.new(id || subordinate_key("_edges", true), *args).tap do |e|
-        edge_ids << e
+        edge_ids << e.id
       end
     end
 
