@@ -6,12 +6,15 @@ module Authorize
       def get(k)
         db.hget(id, k)
       end
+      alias [] get
 
       def set(k, v)
         db.hset(id, k, v)
       end
+      alias []= set
 
       def merge(h)
+        return self if h.empty?
         args = h.inject([]) do |m,(k,v)|
           m << k
           m << v
