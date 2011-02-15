@@ -59,7 +59,7 @@ module Authorize
   end
 
   class UndirectedGraph < Authorize::Graph
-    # Join two vertices symetrically so that they become adjacent.  Graphs built uniquely with
+    # Join two vertices symmetrically so that they become adjacent.  Graphs built uniquely with
     # this method will be undirected.
     def join(id, v0, v1, *args)
       edge_id = id || subordinate_key("_edges", true)
