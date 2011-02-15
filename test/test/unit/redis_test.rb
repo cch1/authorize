@@ -87,6 +87,13 @@ class RedisTest < ActiveSupport::TestCase
     assert Authorize::Redis::String.exists?('newkey')
   end
 
+  test 'destroy' do
+    obj = Authorize::Redis::String.new
+    obj.destroy
+    assert obj.frozen?
+    assert !Authorize::Redis::String.index.include?(obj.id)
+  end
+
 # --String-------------------------------------------------------------------
   test 'proxy to native String' do
     v = Authorize::Redis::String.new

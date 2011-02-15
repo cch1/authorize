@@ -103,7 +103,7 @@ module Authorize
         counter ? self.class.subordinate_key(k, self.class.counter(k)) : k
       end
 
-      # This hook restores a re-instantianted object that has previously been initialized and then persisted.
+      # This hook restores a re-instantiated object that has previously been initialized and then persisted.
       # Non-idempotent operations should be used with great care.
       def reload;end
 
@@ -116,6 +116,12 @@ module Authorize
       # turn simplifies automatic YAMLification of collections of Redis objects.  Arguably, it's more readable as well.
       def to_yaml(opts = {})
         YAML.quick_emit(self.id, opts) {|out| out.scalar("tag:hapgoods.com,2010-08-11:#{self.class.name}", id)}
+      end
+
+      def destroy
+        db.del(id) # This operation will remove all native Redis types (String, Hash, List, Set, etc.) in one shot.
+        self.class.index.delete(id)
+        freeze
       end
 
       # Methods that don't change the state of the object can safely delegate to a Ruby proxy object
