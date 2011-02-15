@@ -15,6 +15,10 @@ module Authorize
       def __getobj__
         db.smembers(id).to_set
       end
+
+      def ==(other)
+        eql?(other) || (__getobj__ == other.__getobj__)
+      end
     end
   end
 end

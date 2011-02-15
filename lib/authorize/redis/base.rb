@@ -94,7 +94,7 @@ module Authorize
       end
 
       def ==(other)
-        __getobj__ == other.__getobj__
+        other.is_a?(self.class) && id.eql?(other.id)
       end
 
       # Note that requesting a counter value "steals" from the class counter.

@@ -8,6 +8,10 @@ module Authorize
       def set(v)
         db.set(id, v)
       end
+
+      def ==(other)
+        eql?(other) || (__getobj__ == other.__getobj__)
+      end
     end
   end
 end

@@ -22,6 +22,10 @@ module Authorize
       def __getobj__
         db.hgetall(id)
       end
+
+      def ==(other)
+        eql?(other) || (__getobj__ == other.__getobj__)
+      end
     end
   end
 end

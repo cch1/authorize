@@ -2,46 +2,41 @@ require 'test_helper'
 
 class RedisTest < ActiveSupport::TestCase
   def setup
+    Authorize::Redis::Base.index.clear # Clear the cache
     Authorize::Redis::String.index.clear # Clear the cache
   end
 
   test 'identity' do
-    assert o0 = Authorize::Redis::String.new
-    assert o1 = Authorize::Redis::String.new
+    assert o0 = Authorize::Redis::Base.new('A')
+    assert o1 = Authorize::Redis::Base.new('B')
     assert_not_same o0, o1
   end
 
   test 'equality' do
-    assert o0 = Authorize::Redis::String.new
-    o0.set('xyx')
-    assert o1 = Authorize::Redis::String.new
-    o1.set('xyx')
+    assert o0 = Authorize::Redis::Base.new('A')
+    assert o1 = Authorize::Redis::Base.new('A')
     assert_equal o0, o1
   end
 
   # This test ensures that different object instances mapping to the same database value(s) are
   # considered identical in the context of membership within a collection (Hash, Set, Array, etc.).
   test 'hash equality' do
-    assert o0 = Authorize::Redis::String.new('A')
-    o0.set('xyx')
-    assert o1 = Authorize::Redis::String.new('A')
-    o1.set('xyx')
+    assert o0 = Authorize::Redis::Base.new('A')
+    assert o1 = Authorize::Redis::Base.new('A')
     assert o0.eql?(o1)
     assert_equal o0.hash, o1.hash
   end
 
-  uses_mocha "track initialization process" do
-    test 'initialize semantics' do
-      Authorize::Redis::String.any_instance.expects(:initialize).once
-      Authorize::Redis::String.any_instance.expects(:reload).never
-      Authorize::Redis::String.new('x') # Even with an existing key...
-    end
+  test 'initialize semantics' do
+    Authorize::Redis::Base.any_instance.expects(:initialize).once
+    Authorize::Redis::Base.any_instance.expects(:reload).never
+    Authorize::Redis::Base.new('x') # Even with an existing key...
+  end
 
-    test 'reload semantics' do
-      Authorize::Redis::String.any_instance.expects(:reload)
-      Authorize::Redis::String.any_instance.expects(:initialize).never
-      assert val1 = Authorize::Redis::String.load('new_key') # Even with a new key
-    end
+  test 'reload semantics' do
+    Authorize::Redis::Base.any_instance.expects(:reload)
+    Authorize::Redis::Base.any_instance.expects(:initialize).never
+    assert val1 = Authorize::Redis::Base.load('new_key') # Even with a new key
   end
 
   # Can Redis objects be serialized according to conventional Marshal contracts?
@@ -89,6 +84,7 @@ class RedisTest < ActiveSupport::TestCase
 
   test 'destroy' do
     obj = Authorize::Redis::String.new
+    obj.set("Hi Mom")
     obj.destroy
     assert obj.frozen?
     assert !Authorize::Redis::String.index.include?(obj.id)
@@ -107,5 +103,13 @@ class RedisTest < ActiveSupport::TestCase
     assert_raises TypeError do
       v << "DEF"
     end
+  end
+
+  test 'native type equality' do
+    assert o0 = Authorize::Redis::String.new
+    o0.set('xyx')
+    assert o1 = Authorize::Redis::String.new
+    o1.set('xyx')
+    assert_equal o0, o1
   end
 end

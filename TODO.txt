@@ -1,7 +1,6 @@
 Aggregate at the database: bit_or for MySQL, custom function for SQLite3 (http://snippets.dzone.com/posts/show/3717)
 Don't create redundant links with Role#link method
 Role#unlink method
-Vertex#remove method
 Per-model permission operations
 Index into roles has_many association with relation string
 Scrap name attribute and let I18N handle Role#to_s with relation string and reference (I18n.t 'role.MOD', :thing => "Sabre 36")
