@@ -117,4 +117,9 @@ class RoleTest < ActiveSupport::TestCase
     assert roles(:user_chris).link(roles(:administrator))
     assert roles(:user_chris).children.include?(roles(:administrator))
   end
+
+  test 'reuse existing edge on redundant link' do
+    Authorize::Graph::Edge.expects(:new).never
+    roles(:user_chris).link(roles(:registered_users))
+  end
 end

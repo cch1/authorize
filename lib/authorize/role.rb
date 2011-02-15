@@ -33,7 +33,9 @@ class Authorize::Role < ActiveRecord::Base
 
   # Link from this role's vertex to other's vertex in the system role graph.  This role becomes the parent.
   def link(other)
-    self.class.graph.edge(nil, vertex, other.vertex)
+    vertex.link(other.vertex, {:multi => 't'}).tap do |edge|
+      self.class.graph.edge_ids << edge.id
+    end
   end
 
   # Creates or updates the unique permission for a given resource to have the given modes
