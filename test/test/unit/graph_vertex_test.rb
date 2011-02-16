@@ -57,8 +57,15 @@ class GraphVertexTest < ActiveSupport::TestCase
   test 'unlink' do
     create_graph
     @edge.expects(:destroy)
-    @v0.unlink(@v1)
+    e = @v0.unlink(@v1)
+    assert_same @edge, e
     assert @v0.edge_ids.empty?
+  end
+
+  test 'unlink without an existant edge' do
+    create_graph
+    e = @v0.unlink(@v2)
+    assert_nil e
   end
 
   private

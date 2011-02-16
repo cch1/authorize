@@ -33,9 +33,11 @@ module Authorize
     end
 
     def unlink(other)
-      edges.select{|e| other.id == e.right.id}.each do |edge|
-        edge_ids.delete(edge.id)
-        edge.destroy
+      edges.detect{|e| other.id == e.right.id}.tap do |edge|
+        if edge
+          edge_ids.delete(edge.id)
+          edge.destroy
+        end
       end
     end
 
