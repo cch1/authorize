@@ -3,6 +3,7 @@ require 'test_helper'
 class RedisArrayTest < ActiveSupport::TestCase
   def setup
     Authorize::Redis::Array.index.clear
+    @factory = Authorize::Redis::Factory.new
   end
 
   test 'push element' do
@@ -17,6 +18,21 @@ class RedisArrayTest < ActiveSupport::TestCase
     Authorize::Redis::Array.db.expects(:rpop).with(aid)
     s = Authorize::Redis::Array.load(aid)
     s.pop
+  end
+
+  test 'index' do
+    a = @factory.array('test', %w(ant bear cat))
+    assert_equal "cat", a[2]
+  end
+
+  test 'range index' do
+    a = @factory.array('test', %w(ant bear cat))
+    assert_equal %w(bear cat), a[1..2]
+  end
+
+  test 'to_a' do
+    a = @factory.array('test', %w(ant bear cat))
+    assert_equal %w(ant bear cat), a.to_a
   end
 
   test 'load proxy from store' do

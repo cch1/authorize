@@ -1,8 +1,14 @@
 module Authorize
   module Redis
     class Array < Base
+      undef to_a # In older versions of Ruby, Object#to_a is invoked and #method_missing is never called.
+
       def [](index)
-        db.lrange(id, index, index)
+        if index.respond_to?(:first)
+          db.lrange(id, index.first, index.last)
+        else
+          db.lindex(id, index)
+        end
       end
 
       def []=(index, v)
