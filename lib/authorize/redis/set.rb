@@ -6,7 +6,10 @@ module Authorize
       def add(v)
         db.sadd(id, v)
       end
-      alias << add
+
+      def <<(v)
+        add(v)
+      end
 
       def delete(v)
         db.srem(id, v)
