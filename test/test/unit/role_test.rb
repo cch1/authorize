@@ -9,7 +9,7 @@ class RoleTest < ActiveSupport::TestCase
     Authorize::Redis::String.index.clear # Clear the cache
     Authorize::Redis::Set.index.clear
     Authorize::Redis::Hash.index.clear
-    Authorize::Graph.index.clear
+    Authorize::Graph::Graph.index.clear
     Authorize::Graph::Vertex.index.clear
     Authorize::Graph::Edge.index.clear
     Authorize::Graph::Fixtures.create_fixtures
@@ -26,7 +26,7 @@ class RoleTest < ActiveSupport::TestCase
   end
 
   test 'create' do
-    Authorize::Graph.db.expects(:set).with(regexp_matches(/Authorize::Role::vertices::\d*::_/), nil).returns(true)
+    Authorize::Graph::Graph.db.expects(:set).with(regexp_matches(/Authorize::Role::vertices::\d*::_/), nil).returns(true)
     assert_difference 'Authorize::Role.count' do
       r = Authorize::Role.create(:name => 'friend of %s', :resource => users(:chris), :relation => 'FRN')
     end

@@ -12,8 +12,8 @@ class Authorize::Role < ActiveRecord::Base
   named_scope :as, lambda{|relation| {:conditions => {:relation => relation}}}
   named_scope :identity, {:conditions => {:relation => nil}}
 
-  GRAPH_ID = Authorize::Graph.subordinate_key(Authorize::Role, 'graph')
-  VERTICES_ID_PREFIX = Authorize::Graph.subordinate_key(Authorize::Role, 'vertices')
+  GRAPH_ID = Authorize::Graph::DirectedGraph.subordinate_key(Authorize::Role, 'graph')
+  VERTICES_ID_PREFIX = Authorize::Graph::DirectedGraph.subordinate_key(Authorize::Role, 'vertices')
 
   def self.const_missing(const)
     if global_role = scoped(:conditions => {:resource_type => nil, :resource_id => nil}).find_by_relation(const.to_s)
@@ -24,7 +24,7 @@ class Authorize::Role < ActiveRecord::Base
   end
 
   def self.graph
-    @graph ||= Authorize::Graph.load(GRAPH_ID)
+    @graph ||= Authorize::Graph::DirectedGraph.load(GRAPH_ID)
   end
 
   def create_vertex

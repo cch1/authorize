@@ -7,7 +7,7 @@ class TrusteeTest < ActiveSupport::TestCase
     Authorize::Redis::String.index.clear # Clear the cache
     Authorize::Redis::Set.index.clear
     Authorize::Redis::Hash.index.clear
-    Authorize::Graph.index.clear
+    Authorize::Graph::Graph.index.clear
     Authorize::Graph::Vertex.index.clear
     Authorize::Graph::Edge.index.clear
   end
