@@ -16,13 +16,15 @@ module Authorize
       merge(properties) if properties.any?
     end
 
-    def left
+    def from
       Graph::Vertex.load(self.class.db.get(subordinate_key('l_id')))
     end
+    alias left from
 
-    def right
+    def to
       Graph::Vertex.load(self.class.db.get(subordinate_key('r_id')))
     end
+    alias right to
 
     def vertices
       [left, right]
