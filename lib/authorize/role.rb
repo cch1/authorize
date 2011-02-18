@@ -7,13 +7,13 @@ class Authorize::Role < ActiveRecord::Base
   validates_uniqueness_of :name, :scope => [:resource_type, :resource_id]
   validates_uniqueness_of :relation, :scope => [:resource_type, :resource_id]
   after_create :create_vertex
-  # TODO: after_destroy to delete vertex and associated edges
+  before_destroy :destroy_vertex
 
   named_scope :as, lambda{|relation| {:conditions => {:relation => relation}}}
   named_scope :identity, {:conditions => {:relation => nil}}
 
-  GRAPH_ID = Authorize::Graph::DirectedGraph.subordinate_key(Authorize::Role, 'graph')
-  VERTICES_ID_PREFIX = Authorize::Graph::DirectedGraph.subordinate_key(Authorize::Role, 'vertices')
+  GRAPH_ID = Authorize::Graph::DirectedAcyclicGraph.subordinate_key(Authorize::Role, 'graph')
+  VERTICES_ID_PREFIX = Authorize::Graph::DirectedAcyclicGraph.subordinate_key(Authorize::Role, 'vertices')
 
   def self.const_missing(const)
     if global_role = scoped(:conditions => {:resource_type => nil, :resource_id => nil}).find_by_relation(const.to_s)
@@ -29,6 +29,10 @@ class Authorize::Role < ActiveRecord::Base
 
   def create_vertex
     self.class.graph.vertex(vertex_id)
+  end
+
+  def destroy_vertex
+    vertex.destroy
   end
 
   # Link from this role's vertex to other's vertex in the system role graph.  This role becomes the parent.

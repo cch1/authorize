@@ -130,4 +130,9 @@ class RoleTest < ActiveSupport::TestCase
     assert !roles(:user_chris).children.include?(roles(:registered_users))
     assert !Authorize::Role.graph.edge_ids.include?(edge.id)
   end
+
+  test 'destroy' do
+    roles(:user_chris).vertex.expects(:destroy).returns(true)
+    roles(:user_chris).destroy
+  end
 end
