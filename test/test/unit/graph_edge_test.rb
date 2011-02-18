@@ -3,50 +3,47 @@ require 'test_helper'
 class GraphEdgeTest < ActiveSupport::TestCase
   def setup
     Authorize::Graph::Edge.index.clear # clear cache
-    @factory = Authorize::Graph::Factory.new
+    create_graph
   end
 
   test 'create edge from one vertex to another' do
     name = 'name'
     property, value = 'property', 'value'
-    from_id, to_id = 'from', 'to'
-    from_edges = []
-    from = mock('from', :edge_ids => from_edges, :id => from_id)
-    to = mock('to', :id => to_id)
-    assert_kind_of Authorize::Graph::Edge, e = Authorize::Graph::Edge.new(name, from, to, property => value)
-    assert_equal e.id, from_edges[0]
+    assert_kind_of Authorize::Graph::Edge, e = Authorize::Graph::Edge.new(name, @cho, @spr, property => value)
+    assert @cho.edges.include?(e)
+    assert @spr.inbound_edges.include?(e)
     assert !Authorize::Graph::Edge.db.keys(e.id + '*').empty?
   end
 
   test 'exists?' do
-    create_graph
     assert Authorize::Graph::Edge.exists?(@e0.id)
   end
 
   test 'from' do
-    create_graph
-    assert_same @from, @e0.from
+    assert_same @cho, @e0.from
   end
 
   test 'to' do
-    create_graph
-    assert_equal @to, @e0.to
+    assert_equal @ric, @e0.to
   end
 
   test 'destroy' do
-    create_graph
     @e0.destroy
+    assert !@cho.edges.include?(@e0)
+    assert !@ric.inbound_edges.include?(@e0)
     assert Authorize::Graph::Edge.db.keys(@e0.id + '*').empty?
   end
 
   private
-  # Create a simple graph with vertex fixtures and stubbed edges (to decouple Edge implementation).
+  # Create a simple graph with edge fixtures and stubbed vertices (to decouple Vertex implementation).
   def create_graph
+    @factory = Authorize::Graph::Factory.new
     l_id, r_id = 'l_id', 'r_id'
     @e0 = @factory.edge('e0', {'property' => 'value'}, :l_id => l_id, :r_id => r_id)
-    @from = stub('from', :id => l_id)
-    @to = stub('to', :id => r_id)
-    Authorize::Graph::Vertex.stubs(:load).with(@from.id).returns(@from)
-    Authorize::Graph::Vertex.stubs(:load).with(@to.id).returns(@to)
+    @cho = stub('cho', :id => l_id, :edges => Set[@e0])
+    @ric = stub('ric', :id => r_id, :inbound_edges => Set[@e0])
+    @spr = stub('spr', :id => 'spr', :inbound_edges => Set[])
+    Authorize::Graph::Vertex.stubs(:load).with(@cho.id).returns(@cho)
+    Authorize::Graph::Vertex.stubs(:load).with(@ric.id).returns(@ric)
   end
 end

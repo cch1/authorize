@@ -11,45 +11,28 @@ module Authorize
       merge(properties) if properties.any?
     end
 
-    def edge_ids
-      Redis::Set.load(subordinate_key('edge_ids'))
-    end
-
-    def edges
-      edge_ids.map{|id| Graph::Edge.load(id)}.to_set
-    end
-
     def adjancies
-      edges.map{|e| e.to}
+      outbound_edges.map{|e| e.to}
     end
     alias neighbors adjancies
 
-    def link(other, properties = {})
-      existing_edge = edges.detect{|e| other.id == e.right.id}
-      existing_edge && existing_edge.merge(properties)
-      existing_edge || Graph::Edge.new(nil, self, other, properties).tap do |edge|
-        edge_ids << edge.id
-      end
-    end
-
-    def unlink(other)
-      edges.detect{|e| other.id == e.right.id}.tap do |edge|
-        if edge
-          edge_ids.delete(edge.id)
-          edge.destroy
-        end
-      end
-    end
-
-    def traverse(options = {})
-      Graph::Traverser.new(self)
-    end
-
     def destroy
-      edges.each{|e| e.destroy}
-      edge_ids.destroy
+      outbound_edges.each{|e| e.destroy}
+      outbound_edges.destroy
+      inbound_edges.each{|e| e.destroy}
+      inbound_edges.destroy
       self.class.db.del(subordinate_key('_'))
       super
+    end
+
+    def outbound_edges
+      @edges || Redis::ModelSet.new(subordinate_key('edge_ids'), Graph::Edge)
+    end
+    alias edges outbound_edges
+
+    # This index is required for efficient backlinking, such as when deleting a vertex.
+    def inbound_edges
+      @inbound_edges || Redis::ModelSet.new(subordinate_key('inbound_edge_ids'), Graph::Edge)
     end
   end
 end

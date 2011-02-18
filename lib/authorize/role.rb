@@ -33,9 +33,12 @@ class Authorize::Role < ActiveRecord::Base
 
   # Link from this role's vertex to other's vertex in the system role graph.  This role becomes the parent.
   def link(other)
-    vertex.link(other.vertex, {:multi => 't'}).tap do |edge|
-      self.class.graph.edge_ids << edge.id
-    end
+    self.class.graph.join(nil, vertex, other.vertex)
+  end
+
+  # Unlink this role's vertex from other's vertex in the system role graph.
+  def unlink(other)
+    self.class.graph.disjoin(vertex, other.vertex)
   end
 
   # Creates or updates the unique permission for a given resource to have the given modes
@@ -81,7 +84,7 @@ class Authorize::Role < ActiveRecord::Base
   end
 
   def roles
-    ids = vertex.traverse.map{|v| v.id.slice(/#{VERTICES_ID_PREFIX}::(\d+)/, 1) }
+    ids = traverser.traverse(vertex).map{|v| v.id.slice(/#{VERTICES_ID_PREFIX}::(\d+)/, 1) }
     self.class.find(ids).to_set
   end
 
@@ -96,5 +99,9 @@ class Authorize::Role < ActiveRecord::Base
   private
   def vertex_id
     @vertex_id ||= Authorize::Graph::Vertex.subordinate_key(VERTICES_ID_PREFIX, id)
+  end
+
+  def traverser
+    @traverser ||= Authorize::Graph::DirectedAcyclicGraphTraverser.new(true)
   end
 end

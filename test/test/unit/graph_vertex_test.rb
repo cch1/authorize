@@ -22,6 +22,13 @@ class GraphVertexTest < ActiveSupport::TestCase
     assert Authorize::Graph::Vertex.db.keys(@v0.id + '*').empty?
   end
 
+  test 'destroy removes inbound edges' do
+    create_graph
+    @edge.expects(:destroy)
+    @v1.destroy
+    assert Authorize::Graph::Vertex.db.keys(@v1.id + '*').empty?
+  end
+
   test 'exists?' do
     create_graph
     assert Authorize::Graph::Vertex.exists?(@v0.id)
@@ -29,7 +36,7 @@ class GraphVertexTest < ActiveSupport::TestCase
 
   test 'edges' do
     create_graph
-    assert_equal Set[@edge], @v0.edges
+    assert_equal Set[@edge], @v0.edges.to_set
   end
 
   test 'adjancies' do
@@ -37,43 +44,12 @@ class GraphVertexTest < ActiveSupport::TestCase
     assert_equal Set[@v1], @v0.adjancies.to_set
   end
 
-  test 'link' do
-    create_graph
-    eid = 'new_edge_id'
-    edge = mock('edge', :id => eid)
-    properties = {'property' => 'value'}
-    Authorize::Graph::Edge.expects(:new).with(nil, @v0, @v2, properties).returns(edge)
-    assert_same edge, @v0.link(@v2, properties)
-    assert @v0.edge_ids.include?(eid)
-  end
-
-  test 'merge with existing edge satisfies link' do
-    create_graph
-    properties = {'property' => 'new value'}
-    @edge.expects(:merge).with(properties)
-    assert_same @edge, @v0.link(@v1, properties)
-  end
-
-  test 'unlink' do
-    create_graph
-    @edge.expects(:destroy)
-    e = @v0.unlink(@v1)
-    assert_same @edge, e
-    assert @v0.edge_ids.empty?
-  end
-
-  test 'unlink without an existant edge' do
-    create_graph
-    e = @v0.unlink(@v2)
-    assert_nil e
-  end
-
   private
   # Create a simple graph with vertex fixtures and stubbed edges (to decouple Edge implementation).
   def create_graph
     eid = 'edge_id'
     @v0 = @factory.vertex('v0', {'property' => 'value'}, :edge_ids => Set[eid])
-    @v1 = @factory.vertex('v1', {}, :edge_ids => Set[])
+    @v1 = @factory.vertex('v1', {}, :edge_ids => Set[], :inbound_edge_ids => Set[eid])
     @v2 = @factory.vertex('v2', {}, :edge_ids => Set[])
     @edge = stub('edge', :id => eid, :from => @v0, :to => @v1)
     Authorize::Graph::Edge.stubs(:load).with(@edge.id).returns(@edge)

@@ -8,30 +8,35 @@ module Authorize
   module Graph
     class DirectedAcyclicGraphTraverser
       def self.traverse(start, check = false)
-        enumerator = check ? :traverse_safely : :traverse
-        self.new.to_enum(enumerator, start)
+        self.new(check).traverse(start)
       end
 
-      def initialize
+      def initialize(check = false)
+        @enumerator = check ? :traverse_safely : :_traverse
         reset!
+      end
+
+      def traverse(start)
+        to_enum(@enumerator, start)
       end
 
       def reset!
         @odometer = 0
       end
 
-      def traverse(start, &block)
+      private
+      def _traverse(start, &block)
         yield start
         start.edges.each do |e|
           @odometer += 1
-          traverse(e.to, &block)
+          _traverse(e.to, &block)
         end
         @odometer
       end
 
       def traverse_safely(start, &block)
         seen = ::Set.new
-        traverse(start) do |vertex|
+        _traverse(start) do |vertex|
           raise "Cycle detected at #{vertex} (Odometer at #{@odometer})!" if seen.include?(vertex)
           seen << vertex
           yield vertex

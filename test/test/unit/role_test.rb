@@ -9,7 +9,7 @@ class RoleTest < ActiveSupport::TestCase
     Authorize::Redis::String.index.clear # Clear the cache
     Authorize::Redis::Set.index.clear
     Authorize::Redis::Hash.index.clear
-    Authorize::Graph::Graph.index.clear
+    Authorize::Graph::DirectedGraph.index.clear
     Authorize::Graph::Vertex.index.clear
     Authorize::Graph::Edge.index.clear
     Authorize::Graph::Fixtures.create_fixtures
@@ -114,12 +114,20 @@ class RoleTest < ActiveSupport::TestCase
 
   test 'link' do
     assert !roles(:user_chris).children.include?(roles(:administrator))
-    assert roles(:user_chris).link(roles(:administrator))
+    assert_kind_of Authorize::Graph::Edge, edge = roles(:user_chris).link(roles(:administrator))
     assert roles(:user_chris).children.include?(roles(:administrator))
+    assert Authorize::Role.graph.edge_ids.include?(edge.id)
   end
 
   test 'reuse existing edge on redundant link' do
     Authorize::Graph::Edge.expects(:new).never
     roles(:user_chris).link(roles(:registered_users))
+  end
+
+  test 'unlink' do
+    assert roles(:user_chris).children.include?(roles(:registered_users))
+    assert_kind_of Authorize::Graph::Edge, edge = roles(:user_chris).unlink(roles(:registered_users))
+    assert !roles(:user_chris).children.include?(roles(:registered_users))
+    assert !Authorize::Role.graph.edge_ids.include?(edge.id)
   end
 end
