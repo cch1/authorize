@@ -75,7 +75,7 @@ class GraphVertexTest < ActiveSupport::TestCase
     @v0 = @factory.vertex('v0', {'property' => 'value'}, :edge_ids => Set[eid])
     @v1 = @factory.vertex('v1', {}, :edge_ids => Set[])
     @v2 = @factory.vertex('v2', {}, :edge_ids => Set[])
-    @edge = stub('edge', :id => eid, :left => @v0, :right => @v1)
+    @edge = stub('edge', :id => eid, :from => @v0, :to => @v1)
     Authorize::Graph::Edge.stubs(:load).with(@edge.id).returns(@edge)
   end
 end

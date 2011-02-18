@@ -35,8 +35,8 @@ class GraphGraphTest < ActiveSupport::TestCase
     assert_kind_of Authorize::Graph::Edge, e = g0.edge("I64", v0, v1)
     assert v0.edges.include?(e)
     assert v1.edges.empty?
-    assert_equal v0, e.left
-    assert_equal v1, e.right
+    assert_equal v0, e.from
+    assert_equal v1, e.to
     assert g0.edges.include?(e)
   end
 

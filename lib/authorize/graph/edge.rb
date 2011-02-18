@@ -27,7 +27,7 @@ module Authorize
     alias right to
 
     def vertices
-      [left, right]
+      [from, to]
     end
 
     def destroy

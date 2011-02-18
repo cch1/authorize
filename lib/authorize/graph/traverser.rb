@@ -17,8 +17,8 @@ module Authorize
         @seen << @start
         yield @start
         @start.edges.each do |e|
-          unless @seen.include?(e.right)
-            self.class.new(e.right, @seen).each(&block)
+          unless @seen.include?(e.to)
+            self.class.new(e.to, @seen).each(&block)
           end
         end
       end

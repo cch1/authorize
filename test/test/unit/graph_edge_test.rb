@@ -23,14 +23,14 @@ class GraphEdgeTest < ActiveSupport::TestCase
     assert Authorize::Graph::Edge.exists?(@e0.id)
   end
 
-  test 'left' do
+  test 'from' do
     create_graph
-    assert_same @left, @e0.left
+    assert_same @from, @e0.from
   end
 
-  test 'right' do
+  test 'to' do
     create_graph
-    assert_equal @right, @e0.right
+    assert_equal @to, @e0.to
   end
 
   test 'destroy' do
@@ -44,9 +44,9 @@ class GraphEdgeTest < ActiveSupport::TestCase
   def create_graph
     l_id, r_id = 'l_id', 'r_id'
     @e0 = @factory.edge('e0', {'property' => 'value'}, :l_id => l_id, :r_id => r_id)
-    @left = stub('left', :id => l_id)
-    @right = stub('right', :id => r_id)
-    Authorize::Graph::Vertex.stubs(:load).with(@left.id).returns(@left)
-    Authorize::Graph::Vertex.stubs(:load).with(@right.id).returns(@right)
+    @from = stub('from', :id => l_id)
+    @to = stub('to', :id => r_id)
+    Authorize::Graph::Vertex.stubs(:load).with(@from.id).returns(@from)
+    Authorize::Graph::Vertex.stubs(:load).with(@to.id).returns(@to)
   end
 end

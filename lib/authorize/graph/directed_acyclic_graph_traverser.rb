@@ -24,7 +24,7 @@ module Authorize
         yield start
         start.edges.each do |e|
           @odometer += 1
-          traverse(e.right, &block)
+          traverse(e.to, &block)
         end
         @odometer
       end

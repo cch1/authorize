@@ -20,7 +20,7 @@ module Authorize
     end
 
     def adjancies
-      edges.map{|e| e.right}
+      edges.map{|e| e.to}
     end
     alias neighbors adjancies
 
