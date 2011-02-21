@@ -11,11 +11,6 @@ module Authorize
       merge(properties) if properties.any?
     end
 
-    def adjancies
-      outbound_edges.map{|e| e.to}
-    end
-    alias neighbors adjancies
-
     def destroy
       outbound_edges.each{|e| e.destroy}
       outbound_edges.destroy
@@ -24,6 +19,11 @@ module Authorize
       self.class.db.del(subordinate_key('_'))
       super
     end
+
+    def adjacencies
+      outbound_edges.map(&:to)
+    end
+    alias neighbors adjacencies
 
     def outbound_edges
       @edges || Redis::ModelSet.new(subordinate_key('edge_ids'), Graph::Edge)

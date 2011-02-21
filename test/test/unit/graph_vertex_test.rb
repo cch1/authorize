@@ -39,9 +39,9 @@ class GraphVertexTest < ActiveSupport::TestCase
     assert_equal Set[@edge], @v0.edges.to_set
   end
 
-  test 'adjancies' do
+  test 'adjacencies' do
     create_graph
-    assert_equal Set[@v1], @v0.adjancies.to_set
+    assert_equal Set[@v1], @v0.adjacencies.to_set
   end
 
   private
