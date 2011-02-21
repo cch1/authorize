@@ -10,7 +10,7 @@ class GraphEdgeTest < ActiveSupport::TestCase
     name = 'name'
     property, value = 'property', 'value'
     assert_kind_of Authorize::Graph::Edge, e = Authorize::Graph::Edge.new(name, @cho, @spr, property => value)
-    assert @cho.edges.include?(e)
+    assert @cho.outbound_edges.include?(e)
     assert @spr.inbound_edges.include?(e)
     assert !Authorize::Graph::Edge.db.keys(e.id + '*').empty?
   end
@@ -29,7 +29,7 @@ class GraphEdgeTest < ActiveSupport::TestCase
 
   test 'destroy' do
     @e0.destroy
-    assert !@cho.edges.include?(@e0)
+    assert !@cho.outbound_edges.include?(@e0)
     assert !@ric.inbound_edges.include?(@e0)
     assert Authorize::Graph::Edge.db.keys(@e0.id + '*').empty?
   end
@@ -40,7 +40,7 @@ class GraphEdgeTest < ActiveSupport::TestCase
     @factory = Authorize::Graph::Factory.new
     l_id, r_id = 'l_id', 'r_id'
     @e0 = @factory.edge('e0', {'property' => 'value'}, :l_id => l_id, :r_id => r_id)
-    @cho = stub('cho', :id => l_id, :edges => Set[@e0])
+    @cho = stub('cho', :id => l_id, :outbound_edges => Set[@e0])
     @ric = stub('ric', :id => r_id, :inbound_edges => Set[@e0])
     @spr = stub('spr', :id => 'spr', :inbound_edges => Set[])
     Authorize::Graph::Vertex.stubs(:load).with(@cho.id).returns(@cho)

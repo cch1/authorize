@@ -12,7 +12,7 @@ module Authorize
       super()
       self.class.db.set(subordinate_key('l_id'), v0.id)
       self.class.db.set(subordinate_key('r_id'), v1.id)
-      v0.edges << self
+      v0.outbound_edges << self
       v1.inbound_edges << self
       merge(properties) if properties.any?
     end
@@ -32,7 +32,7 @@ module Authorize
     end
 
     def destroy
-      from.edges.delete(self)
+      from.outbound_edges.delete(self)
       to.inbound_edges.delete(self)
       self.class.db.del(subordinate_key('l_id'))
       self.class.db.del(subordinate_key('r_id'))
