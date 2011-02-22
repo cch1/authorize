@@ -48,27 +48,4 @@ class GraphGraphTest < ActiveSupport::TestCase
       assert vl.neighbors.include?(vr)
     end
   end
-
-  test 'traverse graph' do
-    g0 = Authorize::Graph::UndirectedGraph.new("Highways")
-    v0 = g0.vertex("Charlottesville")
-    v1 = g0.vertex("Richmond")
-    v2 = g0.vertex("Springfield")
-    v3 = g0.vertex("Dunn_Loring")
-    v4 = g0.vertex("Centreville")
-    v5 = g0.vertex("Strasburg")
-    v6 = g0.vertex("Staunton")
-    v7 = g0.vertex("Roanoke")
-    e0a = g0.join(nil, v6, v0, :name => "I64", :cost => 95)
-    e0b = g0.join(nil, v0, v1, :name => "I64", :cost => 100)
-    e1 = g0.join(nil, v1, v2, :name => "I95", :cost => 85)
-    e2 = g0.join(nil, v2, v3, :name => "I495", :cost => 20)
-    e3a = g0.join(nil, v3, v4, :name => "I66", :cost => 40)
-    e3b = g0.join(nil, v4, v5, :name => "I66", :cost => 120)
-    e4 = g0.join(nil, v5, v6, :name => "I81", :cost => 130)
-    e5 = g0.join(nil, v6, v7, :name => "I81", :cost => 125)
-    e5 = g0.join(nil, v0, v4, :name => "US29", :cost => 200)
-    assert_equal Set[v0, v1, v2, v3, v4, v5, v6, v7], g0.traverse.to_set
-    assert_equal 8, g0.traverse.count
-  end
 end
