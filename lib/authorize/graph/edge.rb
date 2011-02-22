@@ -5,6 +5,8 @@ module Authorize
     # TODO: persist the connected vertices in an array.
     # TODO: a hyperedge can be modeled with a set of vertices instead of explicit left and right vertices.
     class Edge < Redis::Hash
+      include Redis::ModelReference
+
       def self.exists?(id)
         super(subordinate_key(id, 'l_id'))
       end
@@ -19,12 +21,12 @@ module Authorize
       end
 
       def from
-        Vertex.load(self.class.db.get(subordinate_key('l_id')))
+        load_reference(subordinate_key('l_id'), Vertex)
       end
       alias left from
 
       def to
-        Vertex.load(self.class.db.get(subordinate_key('r_id')))
+        load_reference(subordinate_key('r_id'), Vertex)
       end
       alias right to
 
