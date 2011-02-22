@@ -2,7 +2,7 @@ require 'enumerator'
 
 module Authorize
   module Graph
-    class DirectedAcyclicGraphTraverser < Graph::Traverser
+    class DirectedAcyclicGraphTraverser < Traverser
       # Traverse the graph.  The graph is assumed to be acyclic and no cycle detection is performed
       # unless the check parameter is true.
       def self.traverse(start, check = false, &block)

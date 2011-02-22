@@ -25,7 +25,7 @@ module Authorize
 
         # Search up the inheritance chain for a manager unless a connection is specified here.
         def connection_manager
-          @manager ||= (connection_base? ? Authorize::Redis::ConnectionManager.new(@connection_specification) : superclass.connection_manager)
+          @manager ||= (connection_base? ? Redis::ConnectionManager.new(@connection_specification) : superclass.connection_manager)
         end
 
         def connection

@@ -1,7 +1,7 @@
 require 'authorize/redis'
 module Authorize
   module Graph
-    class DirectedAcyclicGraph < Authorize::Graph::DirectedGraph
+    class DirectedAcyclicGraph < DirectedGraph
       def traverse(*args, &block)
         DirectedAcyclicGraphTraverser.traverse(*args, &block)
       end

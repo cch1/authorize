@@ -8,7 +8,7 @@ module Authorize
 
     # Notes:
     #   Edges are created in the context of a graph in order to allow for graph-specific indexing
-    class DirectedGraph < Authorize::Graph::Graph
+    class DirectedGraph < Graph::Graph
       # Find or create a directed edge joining the given vertices
       def join(id, v0, v1, properties = {})
         existing_edge = v0.edges.detect{|e| v1.eql?(e.to)}

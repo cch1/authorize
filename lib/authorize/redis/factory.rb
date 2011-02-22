@@ -12,7 +12,7 @@ module Authorize
         end
       end
 
-      def initialize(db = Authorize::Redis::Base.db)
+      def initialize(db = Base.db)
         @namespace = nil
         @db = db
       end

@@ -4,7 +4,7 @@ module Authorize
   module Graph
     # A binary property graph.  Vertices and Edges have an arbitrary set of named properties.
     # Reference: http://www.nist.gov/dads/HTML/graph.html
-    class Graph < Authorize::Redis::Set
+    class Graph < Redis::Set
       def self.exists?(id)
         db.keys([id, '*'].join(':'))
       end
