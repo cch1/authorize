@@ -34,7 +34,7 @@ module Authorize
       end
 
       def traverse(start = Vertex.load(sort_by{rand}.first))
-        Traverser.new(start)
+        Traverser.traverse(start)
       end
     end
   end

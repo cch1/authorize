@@ -88,7 +88,7 @@ class Authorize::Role < ActiveRecord::Base
   end
 
   def roles
-    ids = traverser.traverse(vertex).map{|v| v.id.slice(/#{VERTICES_ID_PREFIX}::(\d+)/, 1) }
+    ids = traverser.map{|v| v.id.slice(/#{VERTICES_ID_PREFIX}::(\d+)/, 1) }
     self.class.find(ids).to_set
   end
 
@@ -106,6 +106,6 @@ class Authorize::Role < ActiveRecord::Base
   end
 
   def traverser
-    @traverser ||= Authorize::Graph::DirectedAcyclicGraphTraverser.new(true)
+    @traverser ||= Authorize::Graph::DirectedAcyclicGraphTraverser.traverse(vertex)
   end
 end

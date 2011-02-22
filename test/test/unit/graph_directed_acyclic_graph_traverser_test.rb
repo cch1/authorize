@@ -37,12 +37,12 @@ class GraphDirectedAcyclicGraphTraverserTest < ActiveSupport::TestCase
     v4 = g0.vertex("Centreville")
     v5 = g0.vertex("Strasburg")
     v6 = g0.vertex("Staunton")
-    e0 = g0.edge(nil, v0, v1, :name => "I64", :cost => 100)
-    e1 = g0.edge(nil, v1, v2, :name => "I95", :cost => 85)
-    e2 = g0.edge(nil, v2, v3, :name => "I495", :cost => 20)
-    e3 = g0.edge(nil, v3, v4, :name => "I66", :cost => 40)
-    e4 = g0.edge(nil, v4, v5, :name => "I66", :cost => 120)
-    e5 = g0.edge(nil, v5, v6, :name => "I81", :cost => 130)
+    e0 = g0.edge("I64", v0, v1, :name => "I64", :cost => 100)
+    e1 = g0.edge("I95", v1, v2, :name => "I95", :cost => 85)
+    e2 = g0.edge("I495", v2, v3, :name => "I495", :cost => 20)
+    e3 = g0.edge("I66a", v3, v4, :name => "I66", :cost => 40)
+    e4 = g0.edge("I66b", v4, v5, :name => "I66", :cost => 120)
+    e5 = g0.edge("I81", v5, v6, :name => "I81", :cost => 130)
     assert_equal Set[v3, v4, v5, v6], g0.traverse(v3).to_set
   end
 

@@ -57,12 +57,14 @@ class GraphDirectedGraphTest < ActiveSupport::TestCase
 
   private
   def create_interstate_graph
-    eid = 'edge_id'
-    @cho = @factory.vertex('Charlottesville', {'property' => 'value'}, :edge_ids => Set[eid])
-    @ric = @factory.vertex('Richmond', {}, :edge_ids => Set[])
+    i64e_id, i64w_id = 'I64E', 'I64W'
+    @cho = @factory.vertex('Charlottesville', {'property' => 'value'}, :edge_ids => Set[i64e_id], :inbound_edge_ids => Set[i64w_id])
+    @ric = @factory.vertex('Richmond', {}, :edge_ids => Set[i64w_id], :inbound_edge_ids => Set[i64e_id])
     @spr = @factory.vertex('Springfield', {}, :edge_ids => Set[])
-    @i64e = stub('I64E', :id => eid, :from => @cho, :to => @ric)
-    @g0 = @factory.directed_graph('Interstates', Set[@cho.id, @ric.id, @spr.id], :edge_ids => Set[@i64e.id])
+    @i64e = stub('I64E', :id => i64e_id, :from => @cho, :to => @ric)
+    @i64w = stub('I64W', :id => i64w_id, :from => @ric, :to => @cho)
+    @g0 = @factory.directed_graph('Interstates', Set[@cho.id, @ric.id, @spr.id], :edge_ids => Set[@i64e.id, @i64e.id])
     Authorize::Graph::Edge.stubs(:load).with(@i64e.id).returns(@i64e)
+    Authorize::Graph::Edge.stubs(:load).with(@i64w.id).returns(@i64w)
   end
 end

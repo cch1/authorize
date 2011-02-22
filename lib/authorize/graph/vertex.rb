@@ -34,5 +34,31 @@ module Authorize
     def inbound_edges
       @inbound_edges || Redis::ModelSet.new(subordinate_key('inbound_edge_ids'), Graph::Edge)
     end
+
+    # Visit this vertex and recursively visit adjacencies.
+    # This method manages the edge case of needing to visit the first vertex (self) without
+    # actually traversing any edges.
+    def traverse(&block)
+      yield(self, nil) # The canonical "visit".
+      _traverse(&block)
+    end
+
+    protected
+    # Traverse adjacent vertices breadth-wise
+    # Traversal is pruned if the visit block returns an untrue value.
+    def _traverse_breadth_first(edge = nil, &block)
+      outbound_edges.select{|e| yield(e.to, e)}.each do |e|
+        e.to._traverse_breadth_first(e, &block)
+      end
+    end
+
+    # Traverse adjacent vertices depth-wise
+    # Traversal is pruned if the visit block returns an untrue value.
+    def _traverse_depth_first(edge = nil, &block)
+      outbound_edges.each do |e|
+        e.to._traverse_depth_first(e, &block) if yield(e.to, e)
+      end
+    end
+    alias _traverse _traverse_depth_first
   end
 end
