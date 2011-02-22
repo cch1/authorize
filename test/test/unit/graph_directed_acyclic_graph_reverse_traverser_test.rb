@@ -1,7 +1,7 @@
 require 'test_helper'
-require 'authorize/graph/directed_acyclic_graph_traverser'
+require 'authorize/graph/directed_acyclic_graph_reverse_traverser'
 
-class GraphDirectedAcyclicGraphTraverserTest < ActiveSupport::TestCase
+class GraphDirectedAcyclicGraphReverseTraverserTest < ActiveSupport::TestCase
   include Authorize::Graph
 
   def setup
@@ -14,15 +14,8 @@ class GraphDirectedAcyclicGraphTraverserTest < ActiveSupport::TestCase
     build_simpsons_geneaology_graph
   end
 
-  test 'traverse DAG' do
-    assert_equal Set[@A, @H, @B, @L], DirectedAcyclicGraphTraverser.traverse(@A).to_set
-  end
-
-  test 'traverse cyclic DAG with checking' do
-    @g0.edge(nil, @H, @O, :name => "grandfathergrandson") # Introduce a cycle
-    assert_raises RuntimeError do
-      DirectedAcyclicGraphTraverser.traverse(@H, true).to_set
-    end
+  test 'reverse traverse DAG' do
+    assert_equal Set[@H, @A, @O], DirectedAcyclicGraphReverseTraverser.traverse(@H).to_set
   end
 
   private

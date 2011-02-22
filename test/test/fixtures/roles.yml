@@ -17,6 +17,9 @@ e:
 user_chris:
   name: ~
   resource: chris (User)
+user_pascale:
+  name: ~
+  resource: pascale (User)
 registered_users:
   name: Registered Users
   relation: RUS

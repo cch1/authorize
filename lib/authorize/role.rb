@@ -88,7 +88,7 @@ class Authorize::Role < ActiveRecord::Base
   end
 
   def roles
-    ids = traverser.map{|v| v.id.slice(/#{VERTICES_ID_PREFIX}::(\d+)/, 1) }
+    ids = traverser.map{|v| v.id.slice(/#{VERTICES_ID_PREFIX}::(\d+)/, 1)}
     self.class.find(ids).to_set
   end
 
@@ -97,7 +97,9 @@ class Authorize::Role < ActiveRecord::Base
   end
 
   def ancestors
-    raise "Not Yet Implemented"
+    ids = reverse_traverser.map{|v| v.id.slice(/#{VERTICES_ID_PREFIX}::(\d+)/, 1)}
+    ids -= [id.to_s]
+    self.class.find(ids).to_set
   end
 
   private
@@ -107,5 +109,9 @@ class Authorize::Role < ActiveRecord::Base
 
   def traverser
     @traverser ||= Authorize::Graph::DirectedAcyclicGraphTraverser.traverse(vertex)
+  end
+
+  def reverse_traverser
+    @reverse_traverser ||= Authorize::Graph::DirectedAcyclicGraphReverseTraverser.traverse(vertex)
   end
 end

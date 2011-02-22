@@ -2,6 +2,6 @@ Aggregate at the database: bit_or for MySQL, custom function for SQLite3 (http:/
 Per-model permission operations
 Index into roles has_many association with relation string
 Scrap name attribute and let I18N handle Role#to_s with relation string and reference (I18n.t 'role.MOD', :thing => "Sabre 36")
-Walk role graph backwards to possessing identities
 REDIS: ModelArray and ModelHash (key, value, key/value) like ModelSet
 GRAPH: Add UndirectedEdge to make UndirectedGraph's edges more efficient and semantically clean (with one set of properties, not two).
+Eliminate reliance on ActiveSupport dependency loader.

@@ -33,7 +33,7 @@ class RoleTest < ActiveSupport::TestCase
   end
 
   test 'new identity' do
-    assert r = Authorize::Role.new(:resource => users(:pascale))
+    assert r = Authorize::Role.new(:resource => users(:alex))
     assert r.valid?, r.errors.full_messages
   end
 
@@ -108,8 +108,12 @@ class RoleTest < ActiveSupport::TestCase
     assert_kind_of Authorize::Graph::Vertex, v = roles(:user_chris).vertex
   end
 
-  test 'child roles' do
+  test 'descendant roles' do
     assert_equal Set[roles(:registered_users), roles(:public)], roles(:user_chris).descendants
+  end
+
+  test 'ancestor roles' do
+    assert_equal Set[roles(:user_pascale)], roles(:administrator).ancestors
   end
 
   test 'link' do
