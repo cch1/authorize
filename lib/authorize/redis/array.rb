@@ -3,6 +3,10 @@ module Authorize
     class Array < Base
       undef to_a # In older versions of Ruby, Object#to_a is invoked and #method_missing is never called.
 
+      def valid?
+        %w(none list).include?(db.type(id))
+      end
+
       def [](index)
         if index.respond_to?(:first)
           db.lrange(id, index.first, index.last)

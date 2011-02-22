@@ -3,6 +3,10 @@ module Authorize
     class Hash < Base
       undef to_a # In older versions of Ruby, Object#to_a is invoked and #method_missing is never called.
 
+      def valid?
+        %w(none hash).include?(db.type(id))
+      end
+
       def get(k)
         db.hget(id, k)
       end

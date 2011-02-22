@@ -1,6 +1,10 @@
 module Authorize
   module Redis
     class String < Base
+      def valid?
+        %w(none string).include?(db.type(id))
+      end
+
       def __getobj__
         db.get(id)
       end

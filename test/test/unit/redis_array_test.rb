@@ -47,4 +47,14 @@ class RedisArrayTest < ActiveSupport::TestCase
     s.push(23);s.push(27)
     assert_equal "2327", s.inject{|m, e| m + e}
   end
+
+  test 'valid' do
+    a = @factory.array('a', ['a'])
+    assert a.valid?
+  end
+
+  test 'valid when empty' do
+    a = Authorize::Redis::Array.new
+    assert a.valid?
+  end
 end

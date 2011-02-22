@@ -30,4 +30,14 @@ class RedisHashTest < ActiveSupport::TestCase
     h = @factory.hash('h', {'key' => 'a'})
     assert_equal h['key'], 'a'
   end
+
+  test 'valid' do
+    h = @factory.hash('h', {'key' => 'a'})
+    assert h.valid?
+  end
+
+  test 'valid when empty' do
+    h = Authorize::Redis::Hash.new
+    assert h.valid?
+  end
 end

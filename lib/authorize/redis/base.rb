@@ -124,6 +124,14 @@ module Authorize
         freeze
       end
 
+      def exists?
+        self.class.exists?(id)
+      end
+
+      def valid?
+        raise "Abstract class requires implementation"
+      end
+
       # Methods that don't change the state of the object can safely delegate to a Ruby proxy object
       def __getobj__
         raise "Abstract class requires implementation"

@@ -5,6 +5,7 @@ class RedisSetTest < ActiveSupport::TestCase
     Authorize::Redis::String.index.clear # Clear the cache
     Authorize::Redis::Set.index.clear
     Authorize::Redis::Hash.index.clear
+    @factory = Authorize::Redis::Factory.new
   end
 
   test 'add member' do
@@ -32,5 +33,15 @@ class RedisSetTest < ActiveSupport::TestCase
     s = Authorize::Redis::Set.new
     s.add(23);s.add(27)
     assert_equal "2327", s.inject{|m, e| m + e}
+  end
+
+  test 'valid' do
+    s = @factory.set('h', Set['a'])
+    assert s.valid?
+  end
+
+  test 'valid when empty' do
+    s = Authorize::Redis::Set.new
+    assert s.valid?
   end
 end
