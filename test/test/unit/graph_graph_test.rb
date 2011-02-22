@@ -13,7 +13,7 @@ class GraphGraphTest < ActiveSupport::TestCase
   test 'create graph' do
     assert_kind_of Authorize::Graph::Graph, g0 = Authorize::Graph::Graph.new
     assert_kind_of Authorize::Redis::Set, g0
-    assert_kind_of ::Set, g0.edges
+    assert_kind_of Authorize::Redis::ModelSet, g0.edges
     assert_kind_of ::Set, g0.vertices
   end
 

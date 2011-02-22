@@ -14,7 +14,7 @@ module Authorize
         existing_edge = v0.edges.detect{|e| v1.eql?(e.to)}
         existing_edge.try(:merge, properties)
         existing_edge || Edge.new(id, v0, v1, properties).tap do |edge|
-          edge_ids << edge.id
+          edges << edge
         end
       end
 
@@ -22,7 +22,7 @@ module Authorize
         return unless existing_edge = v0.edges.detect{|e| v1.eql?(e.to)}
         existing_edge.tap do |edge|
           edge.destroy
-          edge_ids.delete(edge.id)
+          edges.delete(edge)
         end
       end
     end

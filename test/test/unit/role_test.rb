@@ -120,7 +120,7 @@ class RoleTest < ActiveSupport::TestCase
     assert !roles(:user_chris).descendants.include?(roles(:administrator))
     assert_kind_of Authorize::Graph::Edge, edge = roles(:user_chris).link(roles(:administrator))
     assert roles(:user_chris).descendants.include?(roles(:administrator))
-    assert Authorize::Role.graph.edge_ids.include?(edge.id)
+    assert Authorize::Role.graph.edges.include?(edge)
   end
 
   test 'reuse existing edge on redundant link' do
@@ -132,7 +132,7 @@ class RoleTest < ActiveSupport::TestCase
     assert roles(:user_chris).descendants.include?(roles(:registered_users))
     assert_kind_of Authorize::Graph::Edge, edge = roles(:user_chris).unlink(roles(:registered_users))
     assert !roles(:user_chris).descendants.include?(roles(:registered_users))
-    assert !Authorize::Role.graph.edge_ids.include?(edge.id)
+    assert !Authorize::Role.graph.edges.include?(edge)
   end
 
   test 'destroy' do

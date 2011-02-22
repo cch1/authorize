@@ -27,7 +27,7 @@ class GraphDirectedGraphTest < ActiveSupport::TestCase
     Authorize::Graph::Edge.expects(:new).with(edge.id, @ric, @spr, properties).returns(edge)
     Authorize::Graph::Edge.stubs(:load).with(edge.id).returns(edge)
     assert_same edge, @g0.join(eid, @ric, @spr, properties)
-    assert @g0.edge_ids.include?(edge.id)
+    assert @g0.edges.include?(edge)
   end
 
   test 'join merges properties with existing edge' do
