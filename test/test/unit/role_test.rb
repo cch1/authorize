@@ -109,13 +109,13 @@ class RoleTest < ActiveSupport::TestCase
   end
 
   test 'child roles' do
-    assert_equal Set[roles(:registered_users), roles(:public)], roles(:user_chris).children
+    assert_equal Set[roles(:registered_users), roles(:public)], roles(:user_chris).descendants
   end
 
   test 'link' do
-    assert !roles(:user_chris).children.include?(roles(:administrator))
+    assert !roles(:user_chris).descendants.include?(roles(:administrator))
     assert_kind_of Authorize::Graph::Edge, edge = roles(:user_chris).link(roles(:administrator))
-    assert roles(:user_chris).children.include?(roles(:administrator))
+    assert roles(:user_chris).descendants.include?(roles(:administrator))
     assert Authorize::Role.graph.edge_ids.include?(edge.id)
   end
 
@@ -125,9 +125,9 @@ class RoleTest < ActiveSupport::TestCase
   end
 
   test 'unlink' do
-    assert roles(:user_chris).children.include?(roles(:registered_users))
+    assert roles(:user_chris).descendants.include?(roles(:registered_users))
     assert_kind_of Authorize::Graph::Edge, edge = roles(:user_chris).unlink(roles(:registered_users))
-    assert !roles(:user_chris).children.include?(roles(:registered_users))
+    assert !roles(:user_chris).descendants.include?(roles(:registered_users))
     assert !Authorize::Role.graph.edge_ids.include?(edge.id)
   end
 

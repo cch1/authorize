@@ -92,11 +92,11 @@ class Authorize::Role < ActiveRecord::Base
     self.class.find(ids).to_set
   end
 
-  def children
+  def descendants
     roles.delete(self)
   end
 
-  def parents
+  def ancestors
     raise "Not Yet Implemented"
   end
 
