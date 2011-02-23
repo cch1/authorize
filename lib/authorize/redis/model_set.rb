@@ -7,7 +7,7 @@ module Authorize
         @klass = klass
       end
 
-      [:add, :delete].each do |m|
+      [:add, :delete, :include?].each do |m|
         define_method(m) {|v| super(v.id)}
       end
 

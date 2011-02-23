@@ -44,4 +44,25 @@ class RedisSetTest < ActiveSupport::TestCase
     s = Authorize::Redis::Set.new
     assert s.valid?
   end
+
+  test 'include' do
+    s = @factory.set('h', Set['a'])
+    assert s.include?('a')
+  end
+
+  test 'sample single' do
+    s = @factory.set('h', Set['a', 'b'])
+    assert s.sample
+  end
+
+  test 'sample multiple' do
+    # depends on Ruby 1.9
+#    s = @factory.set('h', Set['a', 'b'])
+#    assert_equal Set['a', 'b'], s.sample(3)
+  end
+
+  test 'first multiple' do
+    s = @factory.set('h', Set['a', 'b'])
+    assert_equal ['a', 'b'].to_set, s.first(3).to_set
+  end
 end

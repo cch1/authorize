@@ -19,6 +19,21 @@ module Authorize
         db.srem(id, v)
       end
 
+      def include?(v)
+        db.sismember(id, v)
+      end
+      alias member? include?
+
+      def sample(n = 1)
+        return method_missing(:sample, n) unless n == 1
+        db.srandmember(id)
+      end
+
+      def first(n = 1)
+        return method_missing(:first, n) unless n == 1
+        sample(n)
+      end
+
       def __getobj__
         db.smembers(id).to_set
       end
