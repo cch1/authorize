@@ -19,6 +19,10 @@ class GraphEdgeTest < ActiveSupport::TestCase
     assert Authorize::Graph::Edge.exists?(@e0.id)
   end
 
+  test 'valid?' do
+    assert @e0.valid?
+  end
+
   test 'from' do
     assert_same @cho, @e0.from
   end

@@ -35,11 +35,15 @@ module Authorize
       end
 
       def destroy
-        from.outbound_edges.delete(self)
-        to.inbound_edges.delete(self)
+        from && from.outbound_edges.delete(self)
+        to && to.inbound_edges.delete(self)
         self.class.db.del(subordinate_key('l_id'))
         self.class.db.del(subordinate_key('r_id'))
         super
+      end
+
+      def valid?
+        from && to && super
       end
     end
   end
