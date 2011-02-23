@@ -39,7 +39,7 @@ module Authorize
       end
 
       def self.subordinate_key(*keys)
-        keys.join(NAMESPACE_SEPARATOR)
+        keys.compact.join(NAMESPACE_SEPARATOR)
       end
 
       def self.counter(key)
