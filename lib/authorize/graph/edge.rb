@@ -13,8 +13,8 @@ module Authorize
 
       def initialize(v0, v1, properties = {})
         super()
-        self.class.db.set(subordinate_key('l_id'), v0.id)
-        self.class.db.set(subordinate_key('r_id'), v1.id)
+        set_reference(subordinate_key('l_id'), v0)
+        set_reference(subordinate_key('r_id'), v1)
         v0.outbound_edges << self
         v1.inbound_edges << self
         merge(properties) if properties.any?

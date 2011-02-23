@@ -22,6 +22,13 @@ class RedisModelReferenceTest < ActiveSupport::TestCase
     assert ModelReference.set_reference(key, h)
   end
 
+  test 'set reference with nil' do
+    key = 'X::reference0'
+    h = Authorize::Redis::Hash.load('X::target')
+    Authorize::Redis::String.db.expects(:del).with(key).returns('0')
+    assert_nil ModelReference.set_reference(key, nil)
+  end
+
   test 'load reference' do
     assert_kind_of Authorize::Redis::Hash, ModelReference.load_reference('X::reference1', Authorize::Redis::Hash)
   end
