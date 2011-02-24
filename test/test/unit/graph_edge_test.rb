@@ -31,6 +31,12 @@ class GraphEdgeTest < ActiveSupport::TestCase
     assert_equal @ric, @e0.to
   end
 
+  test 'equality by id' do
+    e1 = @factory.edge('X', {}, :l_id => @cho.id, :r_id => @spr.id)
+    e2 = @factory.edge('Y', {}, :l_id => @ric.id, :r_id => @spr.id)
+    assert_not_equal e1, e2
+  end
+
   test 'destroy' do
     @e0.destroy
     assert !@cho.outbound_edges.include?(@e0)

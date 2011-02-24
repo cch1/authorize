@@ -12,10 +12,24 @@ class RedisTest < ActiveSupport::TestCase
     assert_not_same o0, o1
   end
 
-  test 'equality' do
+  test 'equality by class and id' do
     assert o0 = Authorize::Redis::Base.new('A')
     assert o1 = Authorize::Redis::Base.new('A')
     assert_equal o0, o1
+  end
+
+  test 'inequality by id' do
+    o0 = Authorize::Redis::Base.new('A')
+    o1 = Authorize::Redis::Base.new('B')
+    assert_not_equal o0, o1
+  end
+
+  test 'inequality by class' do
+    c0 = Class.new(Authorize::Redis::Base)
+    c1 = Class.new(Authorize::Redis::Base)
+    o0 = c0.new('A')
+    o1 = c1.new('B')
+    assert_not_equal o0, o1
   end
 
   # This test ensures that different object instances mapping to the same database value(s) are
@@ -103,13 +117,5 @@ class RedisTest < ActiveSupport::TestCase
     assert_raises TypeError do
       v << "DEF"
     end
-  end
-
-  test 'native type equality' do
-    assert o0 = Authorize::Redis::String.new
-    o0.set('xyx')
-    assert o1 = Authorize::Redis::String.new
-    o1.set('xyx')
-    assert_equal o0, o1
   end
 end

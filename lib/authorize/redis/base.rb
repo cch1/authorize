@@ -86,7 +86,7 @@ module Authorize
       end
 
       def eql?(other)
-        other.is_a?(self.class) && id.eql?(other.id)
+        id.eql?(other.id) && other.is_a?(self.class)
       end
 
       def hash
@@ -94,7 +94,7 @@ module Authorize
       end
 
       def ==(other)
-        other.is_a?(self.class) && id.eql?(other.id)
+        id.eql?(other.id) && other.is_a?(self.class)
       end
 
       # Note that requesting a counter value "steals" from the class counter.
