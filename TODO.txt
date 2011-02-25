@@ -3,5 +3,7 @@ Per-model permission operations
 Index into roles has_many association with relation string
 Scrap name attribute and let I18N handle Role#to_s with relation string and reference (I18n.t 'role.MOD', :thing => "Sabre 36")
 REDIS: ModelArray and ModelHash (key, value, key/value) like ModelSet
+REDIS: Deprecate exists? class and instance methods -the semantics are fishy for degenerate objects, particularly degenerate containers.
 GRAPH: Add UndirectedEdge to make UndirectedGraph's edges more efficient and semantically clean (with one set of properties, not two).
+GRAPH: Streamline Fixtures to only use new once.
 Eliminate reliance on ActiveSupport dependency loader.

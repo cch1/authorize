@@ -14,7 +14,7 @@ class FixtureTest < ActiveSupport::TestCase
   end
 
   test 'key translation' do
-    assert_equal "Authorize::Role::vertices::207907133", Authorize::Graph::Fixtures.name_to_key(:chris)
+    assert_equal "207907133", Authorize::Graph::Fixtures.name_to_key(:chris)
   end
 
   test 'registered type' do

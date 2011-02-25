@@ -42,12 +42,12 @@ module Authorize
         keys.compact.join(NAMESPACE_SEPARATOR)
       end
 
-      def self.counter(key)
+      def self.next_counter(key)
         db.incr(key)
       end
 
-      def self.build_id
-        subordinate_key(name, counter(name))
+      def self.generate_key
+        subordinate_key(name, next_counter(name))
       end
 
       def self.index
@@ -58,8 +58,15 @@ module Authorize
         db.exists(id)
       end
 
+      # Load all model objects in the given namespace
+      def self.load_all(namespace = name)
+        redis_glob = subordinate_key(namespace, '*')
+        re = Regexp.new(subordinate_key(namespace, ".+(?=#{NAMESPACE_SEPARATOR})"))
+        db.keys(redis_glob).map{|m| m.slice(re)}.map{|id| load(id)}
+      end
+
       def self.new(id = nil, *args, &block)
-        id ||= build_id
+        id ||= generate_key
         index[id] = allocate.tap do |o|
           o.instance_variable_set(:@id, id)
           o.send(:initialize, *args, &block)
@@ -100,7 +107,7 @@ module Authorize
       # Note that requesting a counter value "steals" from the class counter.
       def subordinate_key(name, counter = false)
         k = self.class.subordinate_key(id, name)
-        counter ? self.class.subordinate_key(k, self.class.counter(k)) : k
+        counter ? self.class.subordinate_key(k, self.class.next_counter(k)) : k
       end
 
       # This hook restores a re-instantiated object that has previously been initialized and then persisted.

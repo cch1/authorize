@@ -11,6 +11,14 @@ module Authorize
         super(subordinate_key(id, 'l_id'))
       end
 
+      def self.load_all(namespace = name)
+        redis_glob = subordinate_key(namespace, '*', 'l_id')
+        re = Regexp.new(subordinate_key(namespace, ".+(?=#{NAMESPACE_SEPARATOR})"))
+        keys = db.keys(redis_glob)
+        keys = keys.map{|m| m.slice(re)}
+        keys.map{|id| load(id)}
+      end
+
       def initialize(v0, v1, properties = {})
         super()
         set_reference(subordinate_key('l_id'), v0)

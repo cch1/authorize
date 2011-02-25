@@ -106,6 +106,7 @@ class RoleTest < ActiveSupport::TestCase
 
   test 'vertex' do
     assert_kind_of Authorize::Graph::Vertex, v = roles(:user_chris).vertex
+    assert Authorize::Role.graph.vertices.include?(v)
   end
 
   test 'descendant roles' do

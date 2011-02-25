@@ -7,4 +7,5 @@
 - registered_users: [public]
 # 782668386
 - user_chris: [registered_users]
+# 12918588
 - user_pascale: [registered_users, administrator]

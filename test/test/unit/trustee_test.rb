@@ -18,7 +18,7 @@ class TrusteeTest < ActiveSupport::TestCase
 
   test 'create primary role' do
     assert_difference "Authorize::Role.count" do
-      assert_difference "Authorize::Role.graph.count" do
+      assert_difference "Authorize::Role.graph.vertices.count" do
         users(:alex).create_role
       end
     end
@@ -26,7 +26,7 @@ class TrusteeTest < ActiveSupport::TestCase
 
   test 'primary role created after create' do
     assert_difference "Authorize::Role.count" do
-      assert_difference "Authorize::Role.graph.count" do
+      assert_difference "Authorize::Role.graph.vertices.count" do
         assert u = User.create, u.errors.full_messages
         assert u.role
       end

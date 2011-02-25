@@ -5,6 +5,14 @@ module Authorize
         super(subordinate_key(id, '_'))
       end
 
+      def self.load_all(namespace = name)
+        redis_glob = subordinate_key(namespace, '*', '_')
+        re = Regexp.new(subordinate_key(namespace, ".+(?=#{NAMESPACE_SEPARATOR})"))
+        keys = db.keys(redis_glob)
+        keys = keys.map{|m| m.slice(re)}
+        keys.map{|id| load(id)}
+      end
+
       def initialize(properties = {})
         super()
         # Because a degenerate vertex can have neither properties nor edges, we must store a marker to indicate existence

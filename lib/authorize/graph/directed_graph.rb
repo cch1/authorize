@@ -10,19 +10,16 @@ module Authorize
     #   Edges are created in the context of a graph in order to allow for graph-specific indexing
     class DirectedGraph < Graph::Graph
       # Find or create a directed edge joining the given vertices
-      def join(id, v0, v1, properties = {})
+      def join(name, v0, v1, properties = {})
         existing_edge = v0.edges.detect{|e| v1.eql?(e.to)}
         existing_edge.try(:merge, properties)
-        existing_edge || Edge.new(id, v0, v1, properties).tap do |edge|
-          edges << edge
-        end
+        existing_edge || edge(name, v0, v1, properties)
       end
 
       def disjoin(v0, v1)
         return unless existing_edge = v0.edges.detect{|e| v1.eql?(e.to)}
         existing_edge.tap do |edge|
           edge.destroy
-          edges.delete(edge)
         end
       end
     end

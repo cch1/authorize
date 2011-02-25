@@ -24,11 +24,13 @@ class Authorize::Role < ActiveRecord::Base
   end
 
   def self.graph
-    @graph ||= Authorize::Graph::DirectedGraph.load(GRAPH_ID)
+    @graph ||= Authorize::Graph::DirectedGraph.load(GRAPH_ID).tap do |g|
+      g.vertex_namespace = VERTICES_ID_PREFIX
+    end
   end
 
   def create_vertex
-    self.class.graph.vertex(vertex_id)
+    self.class.graph.vertex(id)
   end
 
   def destroy_vertex
@@ -84,7 +86,7 @@ class Authorize::Role < ActiveRecord::Base
 
   def vertex
     raise 'Not possible to dereference vertex for an unpersisted role' unless id
-    @vertex ||= Authorize::Graph::Vertex.load(vertex_id)
+    @vertex ||= self.class.graph.vertex_by_name(id)
   end
 
   def roles
@@ -103,10 +105,6 @@ class Authorize::Role < ActiveRecord::Base
   end
 
   private
-  def vertex_id
-    @vertex_id ||= Authorize::Graph::Vertex.subordinate_key(VERTICES_ID_PREFIX, id)
-  end
-
   def traverser
     @traverser ||= Authorize::Graph::DirectedAcyclicGraphTraverser.traverse(vertex)
   end

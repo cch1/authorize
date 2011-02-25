@@ -19,15 +19,14 @@ module Authorize
           name = node.respond_to?(:keys) ? node.keys.first : node
           children = node.respond_to?(:values) ? node.values.first : []
           key = name_to_key(name)
-          vertex = Vertex.exists?(key) ? Vertex.load(key) : graph.vertex(key)
+          vertex = graph.vertex(key)
           graph.edge(nil, parent, vertex) if parent
           process(graph, children, vertex) unless children.empty?
         end
       end
 
       def self.name_to_key(name)
-        id = ::Fixtures.identify(name)
-        Vertex.subordinate_key(Role::VERTICES_ID_PREFIX, id)
+        ::Fixtures.identify(name).to_s
       end
     end
   end
