@@ -5,14 +5,24 @@ module Authorize
     class DirectedAcyclicGraphTraverser < Traverser
       def traverse(check = false, &block)
         super(&block) unless check
-        self.class.new(self, :traverse).acyclic_assertor.cost_collector
+        t = self.class.new(self, :traverse)
+        if check
+          t.cycle_detector.pruner.cost_collector
+        else
+          t.pruner.cost_collector
+        end
       end
 
-      def acyclic_assertor(&block)
-        return self.class.new(self, :acyclic_assertor).cycle_detector unless block_given?
-        self.each do |vertex, edge|
-          raise "Cycle detected at #{vertex} along #{edge}" unless yield vertex, edge
-          true
+      # Detect cycles in the graph by recording the path taken (effectively an array of visited vertices indexed by
+      # depth).  When a cycle is detected (by finding the current vertex earlier in the path), raise an exception.
+      def cycle_detector(&block)
+        return self.class.new(self, :cycle_detector) unless block_given?
+        seen = ::Array.new
+        self.each do |vertex, edge, depth|
+          found = seen.index(vertex)
+          raise "Cycle detected at #{vertex} along #{edge} at depth #{found} and #{depth}" if found && (found < depth)
+          seen[depth] = vertex
+          yield vertex, edge, depth
         end
       end
     end

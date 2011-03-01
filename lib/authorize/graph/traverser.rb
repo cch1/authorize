@@ -11,16 +11,15 @@ module Authorize
         self.new(start, :tap).traverse(*args).visit(&block)
       end
 
-      # Detect cycles in the graph by accumulating a set of visited nodes.  When a cycle is detected, interrupt the
-      # visit and signal the yielder.  NB: the yielder is responsible for taking further action such as pruning the
-      # traversal or raising an exception (such as would be the case for an acyclic graph).
-      def cycle_detector(&block)
-        return self.class.new(self, :cycle_detector) unless block_given?
+      # Prune the graph by accumulating a set of visited nodes.  When a vertex has already been visited, interrupt the
+      # visit and signal the yielder.
+      def pruner(&block)
+        return self.class.new(self, :pruner) unless block_given?
         seen = ::Set.new
-        self.each do |vertex, edge|
+        self.each do |vertex, edge, depth|
           next false if seen.include?(vertex)
           seen << vertex
-          yield vertex, edge
+          yield vertex, edge, depth
           true # Don't let client block return value influence traversal
         end
       end
@@ -40,8 +39,8 @@ module Authorize
       # Return the accumulated cost of traversing the graph.  The default accumulator is a simple transit counter.
       def cost_collector(cost = 0, f = lambda{|e| 1}, &block)
         return self.class.new(self, :cost_collector) unless block_given?
-        inject(cost) do |total, (vertex, edge)|
-          yield vertex, edge
+        inject(cost) do |total, (vertex, edge, depth)|
+          yield vertex, edge, depth
           total + f.call(edge)
         end
       end
@@ -50,7 +49,7 @@ module Authorize
       # This is typically the last filter in the traverse chain.
       def visit(&block)
         return self.class.new(self, :visit) unless block_given?
-        self.each do |vertex, edge|
+        self.each do |vertex, edge, depth|
           vertex.visit(edge, &block)
         end
       end
@@ -58,27 +57,30 @@ module Authorize
       # Visit the yielded start vertex and traverse to its adjacencies.
       # This operation effectively "expands" the enumerator.
       def traverse(&block)
-        return self.class.new(self, :traverse).cycle_detector.cost_collector unless block_given?
+        return self.class.new(self, :traverse).pruner.cost_collector unless block_given?
         each do |vertex, edge|
-          yield vertex, edge
-          _traverse(vertex, &block)
+          depth = 0
+          yield vertex, edge, depth
+          _traverse(vertex, depth, &block)
         end
       end
 
       private
       # Recursively traverse vertices breadth-wise
       # Traversal is pruned if the block returns an untrue value.
-      def _traverse_breadth_first(start, &block)
-        start.outbound_edges.select{|e| yield(e.to, e)}.each do |e|
-          _traverse_breadth_first(e.to, &block)
+      def _traverse_breadth_first(start, depth, &block)
+        depth += 1
+        start.outbound_edges.select{|e| yield(e.to, e, depth)}.each do |e|
+          _traverse_breadth_first(e.to, depth, &block)
         end
       end
 
       # Recursively traverse vertices depth-wise
       # Traversal is pruned if the block returns an untrue value.
-      def _traverse_depth_first(start, &block)
+      def _traverse_depth_first(start, depth, &block)
+        depth += 1
         start.outbound_edges.each do |e|
-          _traverse_depth_first(e.to, &block) if yield(e.to, e)
+          _traverse_depth_first(e.to, depth, &block) if yield(e.to, e, depth)
         end
       end
       alias _traverse _traverse_depth_first

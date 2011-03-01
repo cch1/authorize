@@ -1,3 +1,4 @@
+require "set"
 require 'test_helper'
 require 'authorize/graph/directed_acyclic_graph_traverser'
 
@@ -25,9 +26,15 @@ class GraphDirectedAcyclicGraphTraverserTest < ActiveSupport::TestCase
     end
   end
 
+  test 'traverse non-polytree DAG with checking' do
+    @g0.edge(nil, @O, @H, :name => "songrandson") # Introduce an undirected cycle
+    assert_equal Set[@O, @A, @H, @B, @L], DirectedAcyclicGraphTraverser.traverse(@O, true).to_set
+  end
+
   private
   # http://en.wikipedia.org/wiki/List_of_characters_in_The_Simpsons
   # http://simpsons.wikia.com/wiki/Abraham_Simpson
+  # This graph is, more precisely, a tree (or ordered directed tree if you talk to a mathematician).
   def build_simpsons_geneaology_graph
     @g0 = DirectedAcyclicGraph.new
     @O = @g0.vertex("Orville")
