@@ -1,7 +1,6 @@
-RAILS_GEM_VERSION = '2.3.5' unless defined? RAILS_GEM_VERSION
+#RAILS_GEM_VERSION = '2.3.5' unless defined? RAILS_GEM_VERSION
 
 require File.join(File.dirname(__FILE__), 'boot')
-require 'plugin_under_test_locator'
 
 Rails::Initializer.run do |config|
   config.cache_classes = false
@@ -9,9 +8,6 @@ Rails::Initializer.run do |config|
 
   # Add additional load paths for your own custom dirs
   # config.load_paths += %W( #{RAILS_ROOT}/lib )
-
-  # Make Rails use only this custom plugin locator to find the plugin under test -which is not in the usual location (there lies recursive madness)
-  config.plugin_locators = [Rails::Plugin::Locator::PluginUnderTestLocator]
 
   # Your secret key for verifying cookie session data integrity.
   # If you change this key, all old sessions will become invalid!
@@ -23,6 +19,8 @@ Rails::Initializer.run do |config|
   }
 
   config.gem 'redis', :version => '>=2.0'
+  config.gem 'authorize'
+
   config.after_initialize do
     ActiveRecord::Migration.verbose = false
     require File.join(RAILS_ROOT, "db", 'schema.rb')

@@ -1,2 +1,5 @@
 .settings
 rdoc
+pkg/*
+*.gem
+.bundle
