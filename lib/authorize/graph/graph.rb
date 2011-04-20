@@ -6,7 +6,7 @@ module Authorize
     # Reference: http://www.nist.gov/dads/HTML/graph.html
     class Graph < Redis::Set
       def self.exists?(id)
-        db.keys([id, '*'].join(':'))
+        db.keys(subordinate_key(id, '*')).any?
       end
 
       attr_writer :edge_namespace, :vertex_namespace

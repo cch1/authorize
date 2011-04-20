@@ -18,7 +18,7 @@ class GraphGraphTest < ActiveSupport::TestCase
 
   test 'exists' do
     name = 'name'
-    Authorize::Graph::Vertex.db.expects(:keys).with(name + ':*', nil).returns(true)
+    Authorize::Graph::Vertex.db.expects(:keys).with(name + '::*', nil).returns([name + '::something'])
     assert Authorize::Graph::Graph.exists?(name)
   end
 
