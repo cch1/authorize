@@ -17,6 +17,18 @@ class ResourceTest < ActiveSupport::TestCase
     assert_equal Set[widgets(:foo)], Widget.permitted([roles(:a)], :read).to_set
   end
 
+  test 'permitted scope to do specified access modes' do
+    assert_equal Set[], Widget.permitted([roles(:a)], :read, :update).to_set
+  end
+
+  test 'permitted scope to do specified access mode via options' do
+    assert_equal Set[widgets(:foo)], Widget.permitted([roles(:a)], {:mode => :read}).to_set
+  end
+
+  test 'permitted scope to do specified access modes via options' do
+    assert_equal Set[], Widget.permitted([roles(:a)], {:modes => [:read, :update]}).to_set
+  end
+
   test 'permitted scope with class permission' do
     assert_equal Widget.all.to_set, Widget.permitted([roles(:c)]).to_set
   end

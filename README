@@ -44,9 +44,18 @@ point for traversing the role hierarchy and determining the effective set of rol
 
 Resource
 A #permissions association is defined that links a resource to the set of permissions (Authorize::Permission) that define the available
-access modes to the resource.
+access modes to the resource.  A #permitted parameterized scope is also provided:
 
-In addition to the macro methods described above, two ActiveRecord::Base subclasses are defined:
+Resource.permitted(roles, options = {})
+Returns the resources to which the given roles have any permissions.  Optionally, the qualifying permissions can be restricted with the
+remaining arguments, or the :mode or :modes options:
+Examples:
+  Widget.permitted([Authorize::Role::PUB])
+  Widget.permitted([Authorize::Role::PUB, my_role], :mode => :update)
+  Widget.permitted([Authorize::Role::PUB, my_role], :modes => [:delete, :update])
+  Widget.permitted([Authorize::Role::PUB, my_role], :delete, :update)
+
+In addition to the macro methods described above, two models (ActiveRecord::Base subclasses) are defined:
 
 Authorize::Permission
 Permissions link roles to resources along with a defined access mode.  Access modes are limited to the classics (read, update, delete, etc.),
@@ -69,14 +78,14 @@ role graph (a DAG) stored in the Redis database.
 
 A Note on Performance
 
-Performance of the <Subject Class>.authorized named scope is critical to effective use of this plugin.  However, it is difficult to optimize across multiple
-database systems for multiple use cases.  Empirically, it seems to be best to use a UNION of the three cases that can yield an authorization: global, class-
+Performance of the Resource.permitted named scope is critical to effective use of this plugin.  However, it is difficult to optimize across multiple
+database systems for multiple use cases.  Empirically, it seems to be best to use a UNION of the three cases that can yield a permission: global, class-
 based and instance based.  Alternatives using moderately complex nested or expanded OR clauses fail to optimize correctly on MySQL 5.0 and degrade terribly 
 with substantial authorization and subject volume.  Not surprisingly, COALESCE also fails to optimize nicely.  A JOIN-based solution was considered, but the
 semantics of a JOIN are such that duplicate subject records are returned.  The duplicates could be eliminated with :group and :having options, but at the cost
-of transparency of the #authorized named scope.
+of transparency of the #permitted named scope.
 
-Indexing of the authorization table is very important.  See the test application's schema for an reasonable set of indices.
+Indexing of the authorize_permissions table is very important.  See the test application's schema for an reasonable set of indices.
 
 Code examples of alternatives:
 
@@ -152,4 +161,3 @@ Code examples of alternatives:
 
 TODO:
  * Flexible configuration of permission bits
- 
