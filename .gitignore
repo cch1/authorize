@@ -3,3 +3,4 @@ rdoc
 pkg/*
 *.gem
 .bundle
+Gemfile.lock
