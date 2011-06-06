@@ -1,7 +1,10 @@
 require 'rake'
 require 'rake/testtask'
-require 'rake/rdoctask'
+require 'rdoc/task'
 require 'bundler'
+
+# Silence warning from recent versions of bundler (1.0.12) for forward compatibility with rake > v0.9.0
+include Rake::DSL if defined? ::Rake::DSL
 
 Bundler::GemHelper.install_tasks
 
