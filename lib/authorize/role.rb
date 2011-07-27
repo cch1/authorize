@@ -81,7 +81,7 @@ class Authorize::Role < ActiveRecord::Base
   end
 
   def to_s
-    (name || "%s") % resource rescue "!! INVALID ROLE NAME !!"
+    (name || "%s") % [relation, resource].compact.join(":") rescue "!! INVALID ROLE NAME !!"
   end
 
   def vertex
