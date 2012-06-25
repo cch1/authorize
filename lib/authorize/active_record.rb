@@ -10,7 +10,7 @@ module Authorize
         # The "identity" role -the single role that represents this trustee.  It is also the root vertex for collecting
         # the set of roles belonging to the trustee.
         has_one :role, :class_name => "Authorize::Role", :as => :resource, :conditions => {:relation => nil}, :dependent => :destroy
-        after_create {|trustee| trustee.create_role(:name => options[:name])}
+        after_create {|trustee| trustee.create_role(:name => options[:name] || trustee.to_s)}
       end
 
       def authorizable_resource
