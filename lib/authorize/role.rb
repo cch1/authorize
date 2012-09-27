@@ -104,6 +104,12 @@ class Authorize::Role < ActiveRecord::Base
     self.class.find(ids).to_set
   end
 
+  def inbound
+    ids = []
+    self.vertex.inbound_edges.to_a.each{|e| ids << e.from.id.slice(/#{VERTICES_ID_PREFIX}::(\d+)/, 1)}
+    self.class.find(ids).to_set
+  end
+
   private
   def traverser
     @traverser ||= Authorize::Graph::DirectedAcyclicGraphTraverser.traverse(vertex)

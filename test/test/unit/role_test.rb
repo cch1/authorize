@@ -117,6 +117,10 @@ class RoleTest < ActiveSupport::TestCase
     assert_equal Set[roles(:user_pascale)], roles(:administrator).ancestors
   end
 
+  test 'parent roles' do
+    assert_equal Set[roles(:user_chris), roles(:user_pascale)], roles(:registered_users).inbound
+  end
+
   test 'link' do
     assert !roles(:user_chris).descendants.include?(roles(:administrator))
     assert_kind_of Authorize::Graph::Edge, edge = roles(:user_chris).link(roles(:administrator))
